@@ -2,14 +2,16 @@ package com.cybernode.projects.HotelBookingApp.entity;
 
 import com.cybernode.projects.HotelBookingApp.enums.Role;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.Set;
 
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Table(name = "app_user")
 public class User {
 

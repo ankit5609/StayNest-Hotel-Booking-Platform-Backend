@@ -1,12 +1,14 @@
 package com.cybernode.projects.HotelBookingApp.entity;
 
 import jakarta.persistence.Embeddable;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @Embeddable
+@Builder
+@RequiredArgsConstructor
+@AllArgsConstructor
 public class HotelContactInfo {
     private String address;
     private String phoneNumber;
