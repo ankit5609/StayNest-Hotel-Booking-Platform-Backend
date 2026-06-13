@@ -1,12 +1,17 @@
 package com.cybernode.projects.HotelBookingApp.service;
 
 
+import com.cybernode.projects.HotelBookingApp.dto.HotelDto;
+import com.cybernode.projects.HotelBookingApp.dto.HotelSearchRequest;
 import com.cybernode.projects.HotelBookingApp.entity.Room;
+import org.springframework.data.domain.Page;
 
 public interface InventoryService {
 
     void initializeRoomForAYear(Room room);
 
-    void deleteFutureInventories(Room room);
+    Page<HotelDto> searchHotels(HotelSearchRequest hotelSearchRequest);
+
+    void deleteAllInventories(Room room);
 
 }
