@@ -2,6 +2,7 @@ package com.cybernode.projects.HotelBookingApp.controller;
 
 import com.cybernode.projects.HotelBookingApp.dto.HotelDto;
 import com.cybernode.projects.HotelBookingApp.dto.HotelInfoDto;
+import com.cybernode.projects.HotelBookingApp.dto.HotelPriceDto;
 import com.cybernode.projects.HotelBookingApp.dto.HotelSearchRequest;
 import com.cybernode.projects.HotelBookingApp.service.HotelService;
 import com.cybernode.projects.HotelBookingApp.service.InventoryService;
@@ -20,9 +21,9 @@ public class HotelBrowseController {
     private final HotelService hotelService;
 
     @GetMapping("/search")
-    public ResponseEntity<Page<HotelDto>> searchHotels(@RequestBody HotelSearchRequest hotelSearchRequest) {
+    public ResponseEntity<Page<HotelPriceDto>> searchHotels(@RequestBody HotelSearchRequest hotelSearchRequest) {
 
-        Page<HotelDto> page = inventoryService.searchHotels(hotelSearchRequest);
+        Page<HotelPriceDto> page = inventoryService.searchHotels(hotelSearchRequest);
         return ResponseEntity.ok(page);
     }
 
