@@ -28,6 +28,7 @@ public class RoomAdminController {
         return ResponseEntity.ok(roomService.getAllRoomsInHotel(hotelId));
     }
 
+
     @GetMapping("/{roomId}")
     public ResponseEntity<RoomDto> getRoomById(@PathVariable Long hotelId, @PathVariable Long roomId) {
         return ResponseEntity.ok(roomService.getRoomById(roomId));
@@ -37,6 +38,12 @@ public class RoomAdminController {
     public ResponseEntity<RoomDto> deleteRoomById(@PathVariable Long hotelId, @PathVariable Long roomId) {
         roomService.deleteRoomById(roomId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{roomId}")
+    public ResponseEntity<RoomDto> updateRoomById(@PathVariable Long hotelId, @PathVariable Long roomId,
+                                                  @RequestBody RoomDto roomDto) {
+        return ResponseEntity.ok(roomService.updateRoomById(hotelId, roomId, roomDto));
     }
 
 }

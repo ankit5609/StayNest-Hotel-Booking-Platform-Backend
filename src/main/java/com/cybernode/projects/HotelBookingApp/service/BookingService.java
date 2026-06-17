@@ -4,8 +4,10 @@ package com.cybernode.projects.HotelBookingApp.service;
 import com.cybernode.projects.HotelBookingApp.dto.BookingDto;
 import com.cybernode.projects.HotelBookingApp.dto.BookingRequest;
 import com.cybernode.projects.HotelBookingApp.dto.GuestDto;
+import com.cybernode.projects.HotelBookingApp.dto.HotelReportDto;
 import com.stripe.model.Event;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface BookingService {
@@ -21,4 +23,10 @@ public interface BookingService {
     void cancelBooking(Long bookingId);
 
     String getBookingStatus(Long bookingId);
+
+    List<BookingDto> getAllBookingsByHotelId(Long hotelId);
+
+    HotelReportDto getHotelReport(Long hotelId, LocalDate startDate, LocalDate endDate);
+
+    List<BookingDto> getMyBookings();
 }
