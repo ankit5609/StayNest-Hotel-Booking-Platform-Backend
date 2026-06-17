@@ -5,6 +5,7 @@ import com.cybernode.projects.HotelBookingApp.dto.BookingDto;
 import com.cybernode.projects.HotelBookingApp.dto.BookingRequest;
 import com.cybernode.projects.HotelBookingApp.dto.GuestDto;
 import com.cybernode.projects.HotelBookingApp.dto.HotelReportDto;
+import com.cybernode.projects.HotelBookingApp.enums.BookingStatus;
 import com.stripe.model.Event;
 
 import java.time.LocalDate;
@@ -22,7 +23,7 @@ public interface BookingService {
 
     void cancelBooking(Long bookingId);
 
-    String getBookingStatus(Long bookingId);
+    BookingStatus getBookingStatus(Long bookingId);
 
     List<BookingDto> getAllBookingsByHotelId(Long hotelId);
 

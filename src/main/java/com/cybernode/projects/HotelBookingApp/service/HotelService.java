@@ -3,6 +3,7 @@ package com.cybernode.projects.HotelBookingApp.service;
 
 import com.cybernode.projects.HotelBookingApp.dto.HotelDto;
 import com.cybernode.projects.HotelBookingApp.dto.HotelInfoDto;
+import com.cybernode.projects.HotelBookingApp.dto.HotelInfoRequestDto;
 
 import java.util.List;
 
@@ -17,7 +18,7 @@ public interface HotelService {
 
     void activateHotel(Long hotelId);
 
-    HotelInfoDto getHotelInfoById(Long hotelId);
+    HotelInfoDto getHotelInfoById(Long hotelId, HotelInfoRequestDto hotelInfoRequestDto);
 
     List<HotelDto> getAllHotels();
 }
