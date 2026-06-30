@@ -41,6 +41,14 @@ public class CheckoutServiceImpl implements CheckoutService {
                     .setCustomer(customer.getId())
                     .setSuccessUrl(successUrl)
                     .setCancelUrl(failureUrl)
+                    // Set bookingId in paymentIntentData metadata so that the PaymentIntent inherits it (critical for payment_intent webhooks)
+                    .setPaymentIntentData(
+                            SessionCreateParams.PaymentIntentData.builder()
+                                    .putMetadata("bookingId", booking.getId().toString())
+                                    .build()
+                    )
+                    // Set bookingId on the Checkout Session metadata as well
+                    .putMetadata("bookingId", booking.getId().toString())
                     .addLineItem(
                             SessionCreateParams.LineItem.builder()
                                     .setQuantity(1L)

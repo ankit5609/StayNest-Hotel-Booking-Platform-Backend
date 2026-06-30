@@ -107,7 +107,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
                 SET i.bookedCount = i.bookedCount - :numberOfRooms
                 WHERE i.room.id = :roomId
                   AND i.date BETWEEN :startDate AND :endDate
-                  AND (i.totalCount - i.bookedCount) >= :numberOfRooms
+                  AND i.bookedCount >= :numberOfRooms
                   AND i.closed = false
             """)
     void cancelBooking(@Param("roomId") Long roomId,
@@ -198,4 +198,19 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Inventory> findAndLockFutureInventory(@Param("roomId") Long roomId,
                                                @Param("today") LocalDate today);
+
+    // Releases locked reservation inventory count (decrements reservedCount) when checkout expires or payment fails
+    @Modifying
+    @Query("""
+                UPDATE Inventory i
+                SET i.reservedCount = i.reservedCount - :numberOfRooms
+                WHERE i.room.id = :roomId
+                  AND i.date BETWEEN :startDate AND :endDate
+                  AND i.reservedCount >= :numberOfRooms
+                  AND i.closed = false
+            """)
+    void releaseReservedInventory(@Param("roomId") Long roomId,
+                                  @Param("startDate") LocalDate startDate,
+                                  @Param("endDate") LocalDate endDate,
+                                  @Param("numberOfRooms") int numberOfRooms);
 }

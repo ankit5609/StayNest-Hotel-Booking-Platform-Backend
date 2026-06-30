@@ -16,6 +16,7 @@ import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
 import com.stripe.model.Refund;
 import com.stripe.model.checkout.Session;
+import com.stripe.model.PaymentIntent;
 import com.stripe.param.RefundCreateParams;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -162,28 +163,100 @@ public class BookingServiceImpl implements BookingService{
     @Override
     @Transactional
     public void capturePayment(Event event) {
-        if ("checkout.session.completed".equals(event.getType())) {
-            Session session = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
-            if (session == null) return;
-
-            String sessionId = session.getId();
-            Booking booking =
-                    bookingRepository.findByPaymentSessionId(sessionId).orElseThrow(() ->
-                            new ResourceNotFoundException("Booking not found for session ID: "+sessionId));
-
-            booking.setBookingStatus(BookingStatus.CONFIRMED);
-            bookingRepository.save(booking);
-
-            inventoryRepository.findAndLockReservedInventory(booking.getRoom().getId(), booking.getCheckInDate(),
-                    booking.getCheckOutDate(), booking.getRoomsCount());
-
-            inventoryRepository.confirmBooking(booking.getRoom().getId(), booking.getCheckInDate(),
-                    booking.getCheckOutDate(), booking.getRoomsCount());
-
-            log.info("Successfully confirmed the booking for Booking ID: {}", booking.getId());
-        } else {
-            log.warn("Unhandled event type: {}", event.getType());
+        switch (event.getType()) {
+            case "checkout.session.completed" -> handleCheckoutCompleted(event);
+            case "checkout.session.expired" -> handleCheckoutExpired(event);
+            case "payment_intent.payment_failed" -> handlePaymentFailed(event);
+            default -> log.warn("Unhandled event type: {}", event.getType());
         }
+    }
+
+    private void handleCheckoutCompleted(Event event) {
+        Session session = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
+        if (session == null) return;
+
+        Booking booking = bookingRepository.findByPaymentSessionId(session.getId()).orElseThrow(() ->
+                new ResourceNotFoundException("Booking not found for session ID: " + session.getId()));
+
+        // Idempotency: if booking is already confirmed, ignore duplicate webhook events
+        if (booking.getBookingStatus() == BookingStatus.CONFIRMED) {
+            log.info("Booking {} already confirmed, ignoring duplicate webhook event", booking.getId());
+            return;
+        }
+
+        booking.setBookingStatus(BookingStatus.CONFIRMED);
+        bookingRepository.save(booking);
+
+        // Lock inventory and shift room count from reserved to booked
+        inventoryRepository.getInventoryAndLockBeforeUpdate(booking.getRoom().getId(), booking.getCheckInDate(),
+                booking.getCheckOutDate());
+        inventoryRepository.confirmBooking(booking.getRoom().getId(), booking.getCheckInDate(),
+                booking.getCheckOutDate(), booking.getRoomsCount());
+
+        log.info("Successfully confirmed the booking for Booking ID: {}", booking.getId());
+    }
+
+    private void handleCheckoutExpired(Event event) {
+        Session session = (Session) event.getDataObjectDeserializer().getObject().orElse(null);
+        if (session == null) return;
+
+        // Session expired without payment: release the held inventory and mark EXPIRED
+        bookingRepository.findByPaymentSessionId(session.getId()).ifPresent(booking -> {
+            if (booking.getBookingStatus() == BookingStatus.EXPIRED) {
+                log.info("Booking {} already expired, ignoring duplicate webhook event", booking.getId());
+                return;
+            }
+            if (booking.getBookingStatus() != BookingStatus.PAYMENTS_PENDING &&
+                booking.getBookingStatus() != BookingStatus.GUESTS_ADDED &&
+                booking.getBookingStatus() != BookingStatus.RESERVED) {
+                log.info("Booking {} is in status {}, skipping session expiry webhook", booking.getId(), booking.getBookingStatus());
+                return;
+            }
+
+            inventoryRepository.getInventoryAndLockBeforeUpdate(booking.getRoom().getId(), booking.getCheckInDate(),
+                    booking.getCheckOutDate());
+            inventoryRepository.releaseReservedInventory(booking.getRoom().getId(), booking.getCheckInDate(),
+                    booking.getCheckOutDate(), booking.getRoomsCount());
+
+            booking.setBookingStatus(BookingStatus.EXPIRED);
+            bookingRepository.save(booking);
+            log.info("Booking {} expired via Stripe session expiry, inventory released", booking.getId());
+        });
+    }
+
+    private void handlePaymentFailed(Event event) {
+        PaymentIntent paymentIntent = (PaymentIntent) event.getDataObjectDeserializer().getObject().orElse(null);
+        if (paymentIntent == null) return;
+
+        // Retrieve bookingId from the payment intent metadata set during checkout session creation
+        String bookingIdStr = paymentIntent.getMetadata().get("bookingId");
+        if (bookingIdStr == null) {
+            log.warn("PaymentIntent {} failed but no bookingId was found in metadata", paymentIntent.getId());
+            return;
+        }
+
+        Long bookingId = Long.valueOf(bookingIdStr);
+        bookingRepository.findById(bookingId).ifPresent(booking -> {
+            if (booking.getBookingStatus() == BookingStatus.PAYMENT_FAILED) {
+                log.info("Booking {} already marked as payment failed, ignoring duplicate webhook event", booking.getId());
+                return;
+            }
+            if (booking.getBookingStatus() != BookingStatus.PAYMENTS_PENDING &&
+                booking.getBookingStatus() != BookingStatus.GUESTS_ADDED &&
+                booking.getBookingStatus() != BookingStatus.RESERVED) {
+                log.info("Booking {} is in status {}, skipping payment failure webhook", booking.getId(), booking.getBookingStatus());
+                return;
+            }
+
+            inventoryRepository.getInventoryAndLockBeforeUpdate(booking.getRoom().getId(), booking.getCheckInDate(),
+                    booking.getCheckOutDate());
+            inventoryRepository.releaseReservedInventory(booking.getRoom().getId(), booking.getCheckInDate(),
+                    booking.getCheckOutDate(), booking.getRoomsCount());
+
+            booking.setBookingStatus(BookingStatus.PAYMENT_FAILED);
+            bookingRepository.save(booking);
+            log.info("Booking {} marked as PAYMENT_FAILED, inventory released", booking.getId());
+        });
     }
 
     @Override
@@ -204,8 +277,8 @@ public class BookingServiceImpl implements BookingService{
         booking.setBookingStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
 
-        inventoryRepository.findAndLockReservedInventory(booking.getRoom().getId(), booking.getCheckInDate(),
-                booking.getCheckOutDate(), booking.getRoomsCount());
+        inventoryRepository.getInventoryAndLockBeforeUpdate(booking.getRoom().getId(), booking.getCheckInDate(),
+                booking.getCheckOutDate());
 
         inventoryRepository.cancelBooking(booking.getRoom().getId(), booking.getCheckInDate(),
                 booking.getCheckOutDate(), booking.getRoomsCount());
