@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -52,6 +53,9 @@ public class BookingServiceImpl implements BookingService{
 
     @Value("${frontend.url}")
     private String frontendUrl;
+
+    @Value("${booking.expiry.minutes:10}")
+    private Integer bookingExpiryMinutes;
 
     @Override
     @Transactional
@@ -370,7 +374,33 @@ public class BookingServiceImpl implements BookingService{
     }
 
     public boolean hasBookingExpired(Booking booking) {
-        return booking.getCreatedAt().plusMinutes(10).isBefore(LocalDateTime.now());
+        return booking.getCreatedAt().plusMinutes(bookingExpiryMinutes).isBefore(LocalDateTime.now());
+    }
+
+    // Scheduled sweep running every 5 minutes to expire abandoned/stale bookings
+    @Scheduled(cron = "0 */5 * * * *")
+    @Transactional
+    public void expireStaleBookings() {
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(bookingExpiryMinutes);
+
+        List<Booking> staleBookings = bookingRepository.findByBookingStatusInAndCreatedAtBefore(
+                List.of(BookingStatus.RESERVED, BookingStatus.GUESTS_ADDED, BookingStatus.PAYMENTS_PENDING),
+                cutoff);
+
+        for (Booking booking : staleBookings) {
+            log.info("Expiring stale booking with ID: {} (status was {})", booking.getId(), booking.getBookingStatus());
+
+            // Lock inventory rows cleanly by ID and dates (using capacity-neutral locking query)
+            inventoryRepository.getInventoryAndLockBeforeUpdate(booking.getRoom().getId(),
+                    booking.getCheckInDate(), booking.getCheckOutDate());
+
+            // Release the reserved rooms count
+            inventoryRepository.releaseReservedInventory(booking.getRoom().getId(),
+                    booking.getCheckInDate(), booking.getCheckOutDate(), booking.getRoomsCount());
+
+            booking.setBookingStatus(BookingStatus.EXPIRED);
+            bookingRepository.save(booking);
+        }
     }
 
     public User getCurrentUser(){
