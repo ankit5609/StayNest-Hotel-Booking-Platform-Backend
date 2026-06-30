@@ -10,6 +10,9 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -26,14 +29,21 @@ public class GuestServiceImpl implements GuestService {
     private final GuestRepository guestRepository;
     private final ModelMapper modelMapper;
 
+    private static final int MAX_PAGE_SIZE = 100;
+
+    private Pageable clampPageSize(Pageable pageable) {
+        if (pageable.getPageSize() > MAX_PAGE_SIZE) {
+            return PageRequest.of(pageable.getPageNumber(), MAX_PAGE_SIZE, pageable.getSort());
+        }
+        return pageable;
+    }
+
     @Override
-    public List<GuestDto> getAllGuests() {
+    public Page<GuestDto> getAllGuests(Pageable pageable) {
         User user = getCurrentUser();
         log.info("Fetching all guests of user with id: {}", user.getId());
-        List<Guest> guests = guestRepository.findByUser(user);
-        return guests.stream()
-                .map(guest -> modelMapper.map(guest, GuestDto.class))
-                .collect(Collectors.toList());
+        return guestRepository.findByUser(user, clampPageSize(pageable))
+                .map(guest -> modelMapper.map(guest, GuestDto.class));
     }
 
     @Override

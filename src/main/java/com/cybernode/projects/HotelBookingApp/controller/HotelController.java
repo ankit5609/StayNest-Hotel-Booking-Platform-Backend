@@ -9,6 +9,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -66,14 +70,17 @@ public class HotelController {
 
     @GetMapping
     @Operation(summary = "Get all hotels owned by admin", tags = {"Admin Hotel"})
-    public ResponseEntity<List<HotelDto>> getAllHotels() {
-        return ResponseEntity.ok(hotelService.getAllHotels());
+    public ResponseEntity<Page<HotelDto>> getAllHotels(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(hotelService.getAllHotels(pageable));
     }
 
     @GetMapping("/{hotelId}/bookings")
     @Operation(summary = "Get all bookings of a hotel", tags = {"Admin Bookings"})
-    public ResponseEntity<List<BookingDto>> getAllBookingsByHotelId(@PathVariable Long hotelId) {
-        return ResponseEntity.ok(bookingService.getAllBookingsByHotelId(hotelId));
+    public ResponseEntity<Page<BookingDto>> getAllBookingsByHotelId(
+            @PathVariable Long hotelId,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(bookingService.getAllBookingsByHotelId(hotelId, pageable));
     }
 
     @GetMapping("/{hotelId}/reports")

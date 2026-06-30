@@ -17,6 +17,9 @@ import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -151,16 +154,21 @@ public class HotelServiceImpl implements HotelService{
         return new HotelInfoDto(modelMapper.map(hotel, HotelDto.class), rooms);
     }
 
+    private static final int MAX_PAGE_SIZE = 100;
+
+    private Pageable clampPageSize(Pageable pageable) {
+        if (pageable.getPageSize() > MAX_PAGE_SIZE) {
+            return PageRequest.of(pageable.getPageNumber(), MAX_PAGE_SIZE, pageable.getSort());
+        }
+        return pageable;
+    }
+
     @Override
-    public List<HotelDto> getAllHotels() {
+    public Page<HotelDto> getAllHotels(Pageable pageable) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         log.info("Getting all hotels for the admin user with ID: {}", user.getId());
-        List<Hotel> hotels = hotelRepository.findByOwner(user);
-
-        return hotels
-                .stream()
-                .map((element) -> modelMapper.map(element, HotelDto.class))
-                .collect(Collectors.toList());
+        return hotelRepository.findByOwner(user, clampPageSize(pageable))
+                .map(hotel -> modelMapper.map(hotel, HotelDto.class));
     }
 
     @Override

@@ -4,9 +4,9 @@ package com.cybernode.projects.HotelBookingApp.service;
 import com.cybernode.projects.HotelBookingApp.dto.HotelDto;
 import com.cybernode.projects.HotelBookingApp.dto.HotelInfoDto;
 import com.cybernode.projects.HotelBookingApp.dto.HotelInfoRequestDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 public interface HotelService {
     HotelDto createNewHotel(HotelDto hotelDto);
@@ -21,7 +21,7 @@ public interface HotelService {
 
     HotelInfoDto getHotelInfoById(Long hotelId, HotelInfoRequestDto hotelInfoRequestDto);
 
-    List<HotelDto> getAllHotels();
+    Page<HotelDto> getAllHotels(Pageable pageable);
 
     String uploadHotelPhoto(Long hotelId, MultipartFile file);
 }

@@ -23,6 +23,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -361,8 +364,17 @@ public class BookingServiceImpl implements BookingService{
         return booking.getBookingStatus();
     }
 
+    private static final int MAX_PAGE_SIZE = 100;
+
+    private Pageable clampPageSize(Pageable pageable) {
+        if (pageable.getPageSize() > MAX_PAGE_SIZE) {
+            return PageRequest.of(pageable.getPageNumber(), MAX_PAGE_SIZE, pageable.getSort());
+        }
+        return pageable;
+    }
+
     @Override
-    public List<BookingDto> getAllBookingsByHotelId(Long hotelId) {
+    public Page<BookingDto> getAllBookingsByHotelId(Long hotelId, Pageable pageable) {
         Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() -> new ResourceNotFoundException("Hotel not " +
                 "found with ID: "+hotelId));
         User user = getCurrentUser();
@@ -371,11 +383,8 @@ public class BookingServiceImpl implements BookingService{
 
         if(!user.equals(hotel.getOwner())) throw new AccessDeniedException("You are not the owner of hotel with id: "+hotelId);
 
-        List<Booking> bookings = bookingRepository.findByHotel(hotel);
-
-        return bookings.stream()
-                .map((element) -> modelMapper.map(element, BookingDto.class))
-                .collect(Collectors.toList());
+        return bookingRepository.findByHotel(hotel, clampPageSize(pageable))
+                .map(booking -> modelMapper.map(booking, BookingDto.class));
     }
 
     @Override
@@ -411,13 +420,10 @@ public class BookingServiceImpl implements BookingService{
     }
 
     @Override
-    public List<BookingDto> getMyBookings() {
+    public Page<BookingDto> getMyBookings(Pageable pageable) {
         User user = getCurrentUser();
-
-        return bookingRepository.findByUser(user)
-                .stream().
-                map((element) -> modelMapper.map(element, BookingDto.class))
-                .collect(Collectors.toList());
+        return bookingRepository.findByUser(user, clampPageSize(pageable))
+                .map(booking -> modelMapper.map(booking, BookingDto.class));
     }
 
     public boolean hasBookingExpired(Booking booking) {

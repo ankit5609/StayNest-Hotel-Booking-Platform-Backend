@@ -2,12 +2,12 @@ package com.cybernode.projects.HotelBookingApp.service;
 
 
 import com.cybernode.projects.HotelBookingApp.dto.GuestDto;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface GuestService {
 
-    List<GuestDto> getAllGuests();
+    Page<GuestDto> getAllGuests(Pageable pageable);
 
     void updateGuest(Long guestId, GuestDto guestDto);
 

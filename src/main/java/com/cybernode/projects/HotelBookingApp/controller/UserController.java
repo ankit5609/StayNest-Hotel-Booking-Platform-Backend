@@ -10,6 +10,10 @@ import com.cybernode.projects.HotelBookingApp.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,8 +40,9 @@ public class UserController {
 
     @GetMapping("/myBookings")
     @Operation(summary = "Get all my previous bookings", tags = {"Profile"})
-    public ResponseEntity<List<BookingDto>> getMyBookings() {
-        return ResponseEntity.ok(bookingService.getMyBookings());
+    public ResponseEntity<Page<BookingDto>> getMyBookings(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(bookingService.getMyBookings(pageable));
     }
 
     @GetMapping("/profile")
@@ -48,8 +53,9 @@ public class UserController {
 
     @GetMapping("/guests")
     @Operation(summary = "Get all my guests", tags = {"Booking Guests"})
-    public ResponseEntity<List<GuestDto>> getAllGuests() {
-        return ResponseEntity.ok(guestService.getAllGuests());
+    public ResponseEntity<Page<GuestDto>> getAllGuests(
+            @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(guestService.getAllGuests(pageable));
     }
 
     @PostMapping("/guests")

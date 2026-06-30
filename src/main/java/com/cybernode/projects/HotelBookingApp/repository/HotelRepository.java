@@ -2,6 +2,8 @@ package com.cybernode.projects.HotelBookingApp.repository;
 
 import com.cybernode.projects.HotelBookingApp.entity.Hotel;
 import com.cybernode.projects.HotelBookingApp.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -13,6 +15,8 @@ import java.util.List;
 @Repository
 public interface HotelRepository extends JpaRepository<Hotel, Long> {
     List<Hotel> findByOwner(User user);
+
+    Page<Hotel> findByOwner(User user, Pageable pageable);
 
     @Modifying
     @Query("""

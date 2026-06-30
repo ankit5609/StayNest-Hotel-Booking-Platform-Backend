@@ -5,6 +5,7 @@ import com.cybernode.projects.HotelBookingApp.entity.Hotel;
 import com.cybernode.projects.HotelBookingApp.entity.Inventory;
 import com.cybernode.projects.HotelBookingApp.entity.Room;
 import com.cybernode.projects.HotelBookingApp.entity.User;
+import com.cybernode.projects.HotelBookingApp.enums.SortOption;
 import com.cybernode.projects.HotelBookingApp.exception.ResourceNotFoundException;
 import com.cybernode.projects.HotelBookingApp.repository.HotelMinPriceRepository;
 import com.cybernode.projects.HotelBookingApp.repository.InventoryRepository;
@@ -16,6 +17,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -64,23 +66,39 @@ public class InventoryServiceImpl implements InventoryService{
         inventoryRepository.deleteByRoom(room);
     }
 
-    @Override
-    public Page<HotelPriceResponseDto> searchHotels(HotelSearchRequest hotelSearchRequest) {
-        log.info("Searching hotels for {} city, from {} to {}", hotelSearchRequest.getCity(), hotelSearchRequest.getStartDate(), hotelSearchRequest.getEndDate());
-        Pageable pageable = PageRequest.of(hotelSearchRequest.getPage(), hotelSearchRequest.getSize());
-        long dateCount =
-                ChronoUnit.DAYS.between(hotelSearchRequest.getStartDate(), hotelSearchRequest.getEndDate()) + 1;
+    private static final int MAX_SEARCH_PAGE_SIZE = 100;
 
-        // business logic - 90 days
-        Page<HotelPriceDto> hotelPage =
-                hotelMinPriceRepository.findHotelsWithAvailableInventory(hotelSearchRequest.getCity(),
-                        hotelSearchRequest.getStartDate(), hotelSearchRequest.getEndDate(), hotelSearchRequest.getRoomsCount(),
-                        dateCount, pageable);
+    @Override
+    public Page<HotelPriceResponseDto> searchHotels(HotelSearchRequest req) {
+        log.info("Searching hotels for {} city, from {} to {}, sortBy={}", req.getCity(), req.getStartDate(), req.getEndDate(), req.getSortBy());
+
+        int pageSize = Math.min(req.getSize(), MAX_SEARCH_PAGE_SIZE);
+        SortOption sortBy = req.getSortBy() != null ? req.getSortBy() : SortOption.PRICE_ASC;
+
+        Page<HotelPriceDto> hotelPage;
+
+        if (sortBy == SortOption.RATING_DESC) {
+            Pageable pageable = PageRequest.of(req.getPage(), pageSize,
+                    Sort.by(Sort.Direction.DESC, "hotel.averageRating"));
+            hotelPage = hotelMinPriceRepository.findHotels(
+                    req.getCity(), req.getStartDate(), req.getEndDate(),
+                    req.getMinRating(), req.getMinPrice(), req.getMaxPrice(), pageable);
+        } else if (sortBy == SortOption.PRICE_DESC) {
+            Pageable pageable = PageRequest.of(req.getPage(), pageSize);
+            hotelPage = hotelMinPriceRepository.findHotelsOrderByPriceDesc(
+                    req.getCity(), req.getStartDate(), req.getEndDate(),
+                    req.getMinRating(), req.getMinPrice(), req.getMaxPrice(), pageable);
+        } else {
+            Pageable pageable = PageRequest.of(req.getPage(), pageSize);
+            hotelPage = hotelMinPriceRepository.findHotelsOrderByPriceAsc(
+                    req.getCity(), req.getStartDate(), req.getEndDate(),
+                    req.getMinRating(), req.getMinPrice(), req.getMaxPrice(), pageable);
+        }
 
         return hotelPage.map(hotelPriceDto -> {
-            HotelPriceResponseDto hotelPriceResponseDto = modelMapper.map(hotelPriceDto.getHotel(), HotelPriceResponseDto.class);
-            hotelPriceResponseDto.setPrice(hotelPriceDto.getPrice());
-            return hotelPriceResponseDto;
+            HotelPriceResponseDto dto = modelMapper.map(hotelPriceDto.getHotel(), HotelPriceResponseDto.class);
+            dto.setPrice(hotelPriceDto.getPrice());
+            return dto;
         });
     }
 

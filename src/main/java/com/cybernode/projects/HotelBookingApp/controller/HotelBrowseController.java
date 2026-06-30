@@ -1,6 +1,7 @@
 package com.cybernode.projects.HotelBookingApp.controller;
 
 import com.cybernode.projects.HotelBookingApp.dto.*;
+import com.cybernode.projects.HotelBookingApp.enums.SortOption;
 import com.cybernode.projects.HotelBookingApp.service.HotelService;
 import com.cybernode.projects.HotelBookingApp.service.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 
@@ -28,7 +30,11 @@ public class HotelBrowseController {
             @RequestParam LocalDate endDate,
             @RequestParam Integer roomsCount,
             @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) Double minRating,
+            @RequestParam(defaultValue = "PRICE_ASC") SortOption sortBy) {
 
         HotelSearchRequest hotelSearchRequest = new HotelSearchRequest();
         hotelSearchRequest.setCity(city);
@@ -37,9 +43,12 @@ public class HotelBrowseController {
         hotelSearchRequest.setRoomsCount(roomsCount);
         hotelSearchRequest.setPage(page);
         hotelSearchRequest.setSize(size);
+        hotelSearchRequest.setMinPrice(minPrice);
+        hotelSearchRequest.setMaxPrice(maxPrice);
+        hotelSearchRequest.setMinRating(minRating);
+        hotelSearchRequest.setSortBy(sortBy);
 
-        var pageResult = inventoryService.searchHotels(hotelSearchRequest);
-        return ResponseEntity.ok(pageResult);
+        return ResponseEntity.ok(inventoryService.searchHotels(hotelSearchRequest));
     }
 
     @GetMapping("/{hotelId}/info")
