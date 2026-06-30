@@ -50,6 +50,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/bookings/**").authenticated()
                         .requestMatchers("/users/**").authenticated()
                         .requestMatchers("/auth/logout").authenticated()
+                        .requestMatchers("/reviews/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .exceptionHandling(exHandlingConfig -> exHandlingConfig.accessDeniedHandler(accessDeniedHandler()));

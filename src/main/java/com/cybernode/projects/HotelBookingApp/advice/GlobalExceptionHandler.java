@@ -3,6 +3,7 @@ package com.cybernode.projects.HotelBookingApp.advice;
 import com.cybernode.projects.HotelBookingApp.exception.ResourceNotFoundException;
 import com.cybernode.projects.HotelBookingApp.exception.UnAuthorisedException;
 import io.jsonwebtoken.JwtException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -85,6 +86,15 @@ public class GlobalExceptionHandler {
         ApiError apiError = ApiError.builder()
                 .status(HttpStatus.FORBIDDEN)
                 .message(ex.getMessage())
+                .build();
+        return buildErrorResponseEntity(apiError);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<?>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        ApiError apiError = ApiError.builder()
+                .status(HttpStatus.CONFLICT)
+                .message("This booking has already been reviewed")
                 .build();
         return buildErrorResponseEntity(apiError);
     }

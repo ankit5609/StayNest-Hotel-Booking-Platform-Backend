@@ -52,4 +52,10 @@ public class Hotel {
     @JsonIgnore
     private List<Room> rooms;
 
+    @Builder.Default
+    private Double averageRating = 0.0;
+
+    @Builder.Default
+    private Long reviewCount = 0L;
+
 }

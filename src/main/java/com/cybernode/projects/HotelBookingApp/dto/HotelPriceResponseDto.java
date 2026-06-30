@@ -16,4 +16,6 @@ public class HotelPriceResponseDto {
     private String[] amenities;
     private HotelContactInfo contactInfo;
     private Double price;
+    private Double averageRating;
+    private Long reviewCount;
 }

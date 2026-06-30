@@ -32,4 +32,7 @@ public class HotelDto {
 
     // Flag indicating whether the hotel is active or not
     private Boolean active;
+
+    private Double averageRating;
+    private Long reviewCount;
 }
