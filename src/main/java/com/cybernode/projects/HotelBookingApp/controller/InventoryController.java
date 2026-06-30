@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -26,7 +27,8 @@ public class InventoryController {
     @PatchMapping("/rooms/{roomId}")
     @Operation(summary = "Update the inventory of a room", tags = {"Admin Inventory"})
     public ResponseEntity<Void> updateInventory(@PathVariable Long roomId,
-                                                @RequestBody UpdateInventoryRequestDto updateInventoryRequestDto) {
+                                                @Valid @RequestBody UpdateInventoryRequestDto updateInventoryRequestDto) {
+        // UpdateInventoryRequestDto is validated against constraints (surge factor bounds, start/end dates, closed status) before updating
         inventoryService.updateInventory(roomId, updateInventoryRequestDto);
         return ResponseEntity.noContent().build();
     }

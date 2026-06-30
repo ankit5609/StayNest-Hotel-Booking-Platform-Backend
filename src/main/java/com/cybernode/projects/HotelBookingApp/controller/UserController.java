@@ -8,6 +8,7 @@ import com.cybernode.projects.HotelBookingApp.service.BookingService;
 import com.cybernode.projects.HotelBookingApp.service.GuestService;
 import com.cybernode.projects.HotelBookingApp.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +27,8 @@ public class UserController {
 
     @PatchMapping("/profile")
     @Operation(summary = "Update the user profile", tags = {"Profile"})
-    public ResponseEntity<Void> updateProfile(@RequestBody ProfileUpdateRequestDto profileUpdateRequestDto) {
+    public ResponseEntity<Void> updateProfile(@Valid @RequestBody ProfileUpdateRequestDto profileUpdateRequestDto) {
+        // ProfileUpdateRequestDto is validated (e.g. name length, past dateOfBirth) if those fields are present in the patch payload
         userService.updateProfile(profileUpdateRequestDto);
 
         return ResponseEntity.noContent().build();
@@ -52,13 +54,15 @@ public class UserController {
 
     @PostMapping("/guests")
     @Operation(summary = "Add a new guest to my guests list", tags = {"Booking Guests"})
-    public ResponseEntity<GuestDto> addNewGuest(@RequestBody GuestDto guestDto) {
+    public ResponseEntity<GuestDto> addNewGuest(@Valid @RequestBody GuestDto guestDto) {
+        // GuestDto is validated (name, gender, dateOfBirth must be present and valid) before creation
         return ResponseEntity.status(HttpStatus.CREATED).body(guestService.addNewGuest(guestDto));
     }
 
     @PutMapping("guests/{guestId}")
     @Operation(summary = "Update a guest", tags = {"Booking Guests"})
-    public ResponseEntity<Void> updateGuest(@PathVariable Long guestId, @RequestBody GuestDto guestDto) {
+    public ResponseEntity<Void> updateGuest(@PathVariable Long guestId, @Valid @RequestBody GuestDto guestDto) {
+        // GuestDto is validated (name, gender, dateOfBirth must be present and valid) before updating
         guestService.updateGuest(guestId, guestDto);
         return ResponseEntity.noContent().build();
     }

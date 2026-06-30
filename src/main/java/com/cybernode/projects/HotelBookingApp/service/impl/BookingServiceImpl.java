@@ -59,6 +59,12 @@ public class BookingServiceImpl implements BookingService{
         log.info("Initialising booking for hotel : {}, room: {}, date {}-{}", bookingRequest.getHotelId(),
                 bookingRequest.getRoomId(), bookingRequest.getCheckInDate(), bookingRequest.getCheckOutDate());
 
+        // Validate date ranges: check-out date must be strictly after check-in date
+        if (bookingRequest.getCheckOutDate().isBefore(bookingRequest.getCheckInDate()) ||
+                bookingRequest.getCheckOutDate().isEqual(bookingRequest.getCheckInDate())) {
+            throw new IllegalArgumentException("Check-out date must be after check-in date");
+        }
+
         Hotel hotel = hotelRepository.findById(bookingRequest.getHotelId()).orElseThrow(() ->
                 new ResourceNotFoundException("Hotel not found with id: "+bookingRequest.getHotelId()));
 

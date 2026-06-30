@@ -3,6 +3,7 @@ package com.cybernode.projects.HotelBookingApp.controller;
 import com.cybernode.projects.HotelBookingApp.dto.*;
 import com.cybernode.projects.HotelBookingApp.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +20,8 @@ public class HotelBookingController {
 
     @PostMapping("/init")
     @Operation(summary = "Initiate the booking", tags = {"Booking Flow"})
-    public ResponseEntity<BookingDto> initialiseBooking(@RequestBody BookingRequest bookingRequest) {
+    public ResponseEntity<BookingDto> initialiseBooking(@Valid @RequestBody BookingRequest bookingRequest) {
+        // BookingRequest is validated against bean constraints (date rules, roomsCount >= 1, etc.) before initialization
         return ResponseEntity.ok(bookingService.initialiseBooking(bookingRequest));
     }
 

@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,13 +30,15 @@ public class AuthController {
 
     @PostMapping("/signup")
     @Operation(summary = "Create a new account", tags = {"Auth"})
-    public ResponseEntity<UserDto> signup(@RequestBody SignUpRequestDto signUpRequestDto) {
+    public ResponseEntity<UserDto> signup(@Valid @RequestBody SignUpRequestDto signUpRequestDto) {
+        // SignUpRequestDto is validated against bean validation constraints (email, password format/length, name) before registering
         return new ResponseEntity<>(authService.signUp(signUpRequestDto), HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
     @Operation(summary = "Login request", tags = {"Auth"})
-    public ResponseEntity<LoginResponseDto> login(@RequestBody LoginDto loginDto, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+    public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginDto loginDto, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
+        // LoginDto is validated against validation constraints (not blank, valid email format) before processing authentication
         AuthTokensDTO auth = authService.login(loginDto);
 
         Cookie cookie = new Cookie("refreshToken", auth.getRefreshToken());

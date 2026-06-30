@@ -3,6 +3,7 @@ package com.cybernode.projects.HotelBookingApp.controller;
 import com.cybernode.projects.HotelBookingApp.dto.RoomDto;
 import com.cybernode.projects.HotelBookingApp.service.RoomService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,8 @@ public class RoomAdminController {
     @PostMapping
     @Operation(summary = "Create a new room in a hotel", tags = {"Admin Inventory"})
     public ResponseEntity<RoomDto> createNewRoom(@PathVariable Long hotelId,
-                                                 @RequestBody RoomDto roomDto) {
+                                                 @Valid @RequestBody RoomDto roomDto) {
+        // RoomDto is validated against constraints (capacity >= 1, base price >= 0, etc.) before creating
         RoomDto room = roomService.createNewRoom(hotelId, roomDto);
         return new ResponseEntity<>(room, HttpStatus.CREATED);
     }
@@ -48,7 +50,8 @@ public class RoomAdminController {
     @PutMapping("/{roomId}")
     @Operation(summary = "Update a room", tags = {"Admin Inventory"})
     public ResponseEntity<RoomDto> updateRoomById(@PathVariable Long hotelId, @PathVariable Long roomId,
-                                                  @RequestBody RoomDto roomDto) {
+                                                  @Valid @RequestBody RoomDto roomDto) {
+        // RoomDto is validated against constraints (capacity >= 1, base price >= 0, etc.) before updating
         return ResponseEntity.ok(roomService.updateRoomById(hotelId, roomId, roomDto));
     }
 

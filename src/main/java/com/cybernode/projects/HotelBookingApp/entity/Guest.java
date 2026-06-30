@@ -4,6 +4,8 @@ import com.cybernode.projects.HotelBookingApp.enums.Gender;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Getter
 @Setter
@@ -26,5 +28,5 @@ public class Guest {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    private Integer age;
+    private LocalDate dateOfBirth;
 }
