@@ -11,7 +11,9 @@ import com.cybernode.projects.HotelBookingApp.repository.HotelRepository;
 import com.cybernode.projects.HotelBookingApp.repository.InventoryRepository;
 import com.cybernode.projects.HotelBookingApp.repository.RoomRepository;
 import com.cybernode.projects.HotelBookingApp.service.HotelService;
+import com.cybernode.projects.HotelBookingApp.service.ImageUploadService;
 import com.cybernode.projects.HotelBookingApp.service.InventoryService;
+import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -33,6 +35,7 @@ public class HotelServiceImpl implements HotelService{
     private final InventoryService inventoryService;
     private final RoomRepository roomRepository;
     private final InventoryRepository inventoryRepository;
+    private final ImageUploadService imageUploadService;
 
     @Override
     public HotelDto createNewHotel(HotelDto hotelDto) {
@@ -160,5 +163,32 @@ public class HotelServiceImpl implements HotelService{
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public String uploadHotelPhoto(Long hotelId, MultipartFile file) {
+        log.info("Uploading photo for hotel with ID: {}", hotelId);
+        Hotel hotel = hotelRepository.findById(hotelId)
+                .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: " + hotelId));
 
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (!user.equals(hotel.getOwner())) {
+            throw new UnAuthorisedException("This user does not own this hotel with id: " + hotelId);
+        }
+
+        String imageUrl = imageUploadService.uploadImage(file);
+
+        String[] currentPhotos = hotel.getPhotos();
+        String[] newPhotos;
+        if (currentPhotos == null) {
+            newPhotos = new String[]{imageUrl};
+        } else {
+            newPhotos = new String[currentPhotos.length + 1];
+            System.arraycopy(currentPhotos, 0, newPhotos, 0, currentPhotos.length);
+            newPhotos[currentPhotos.length] = imageUrl;
+        }
+        hotel.setPhotos(newPhotos);
+        hotelRepository.save(hotel);
+
+        log.info("Successfully uploaded photo to Cloudinary and saved to hotel {}", hotelId);
+        return imageUrl;
+    }
 }

@@ -4,6 +4,7 @@ package com.cybernode.projects.HotelBookingApp.service;
 import com.cybernode.projects.HotelBookingApp.dto.HotelDto;
 import com.cybernode.projects.HotelBookingApp.dto.HotelInfoDto;
 import com.cybernode.projects.HotelBookingApp.dto.HotelInfoRequestDto;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -21,4 +22,6 @@ public interface HotelService {
     HotelInfoDto getHotelInfoById(Long hotelId, HotelInfoRequestDto hotelInfoRequestDto);
 
     List<HotelDto> getAllHotels();
+
+    String uploadHotelPhoto(Long hotelId, MultipartFile file);
 }

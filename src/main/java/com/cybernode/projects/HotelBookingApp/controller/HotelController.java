@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -85,6 +86,14 @@ public class HotelController {
         if (endDate == null) endDate = LocalDate.now();
 
         return ResponseEntity.ok(bookingService.getHotelReport(hotelId, startDate, endDate));
+    }
+
+    @PostMapping("/{hotelId}/photos")
+    @Operation(summary = "Upload a photo for a hotel", tags = {"Admin Hotel"})
+    public ResponseEntity<String> uploadHotelPhoto(@PathVariable Long hotelId,
+                                                    @RequestParam("file") MultipartFile file) {
+        String url = hotelService.uploadHotelPhoto(hotelId, file);
+        return ResponseEntity.ok(url);
     }
 
 }
