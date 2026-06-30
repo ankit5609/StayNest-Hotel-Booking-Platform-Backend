@@ -35,3 +35,4 @@ build/
 # Application Config
 src/main/resources/application.properties
 .env
+brain.md
