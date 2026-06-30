@@ -1,5 +1,6 @@
 package com.cybernode.projects.HotelBookingApp.security;
 
+import com.cybernode.projects.HotelBookingApp.dto.AuthTokensDTO;
 import com.cybernode.projects.HotelBookingApp.dto.LoginDto;
 import com.cybernode.projects.HotelBookingApp.dto.SignUpRequestDto;
 import com.cybernode.projects.HotelBookingApp.dto.UserDto;
@@ -43,25 +44,37 @@ public class AuthService {
         return modelMapper.map(newUser, UserDto.class);
     }
 
-    public String[] login(LoginDto loginDto) {
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                loginDto.getEmail(), loginDto.getPassword()
-        ));
+    public AuthTokensDTO login(LoginDto dto) {
 
+        Authentication authentication =
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                dto.getEmail(),
+                                dto.getPassword()
+                        )
+                );
         User user = (User) authentication.getPrincipal();
-
-        String[] arr = new String[2];
-        arr[0] = jwtService.generateAccessToken(user);
-        arr[1] = jwtService.generateRefreshToken(user);
-
-        return arr;
+        String accessToken =
+                jwtService.generateAccessToken(user);
+        String refreshToken =
+                jwtService.generateRefreshToken(user);
+        return new AuthTokensDTO(
+                accessToken,
+                refreshToken,
+                user.getRoles()
+        );
     }
 
-    public String refreshToken(String refreshToken) {
+    public AuthTokensDTO refreshToken(String refreshToken) {
         Long id = jwtService.getUserIdFromToken(refreshToken);
 
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found with id: "+id));
-        return jwtService.generateAccessToken(user);
+        String accessToken=jwtService.generateAccessToken(user);
+        return new AuthTokensDTO(
+                accessToken,
+                "",
+                user.getRoles()
+        );
     }
 
 }

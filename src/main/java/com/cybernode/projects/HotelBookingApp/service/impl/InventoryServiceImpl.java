@@ -119,6 +119,40 @@ public class InventoryServiceImpl implements InventoryService{
                 updateInventoryRequestDto.getSurgeFactor());
     }
 
+    @Override
+    @Transactional
+    public void updateInventoryForRoomChange(Room room, boolean priceChanged, boolean countChanged) {
+        LocalDate today = LocalDate.now();
+
+        List<Inventory> futureInventory = inventoryRepository.findAndLockFutureInventory(room.getId(), today);
+
+        if (futureInventory.isEmpty()) {
+            log.info("No future inventory found for room with id: {}, skipping inventory sync", room.getId());
+            return;
+        }
+        if (countChanged) {
+            Integer newTotalCount = room.getTotalCount();
+
+            int maxCommitted = futureInventory.stream()
+                    .mapToInt(inv -> inv.getBookedCount() + inv.getReservedCount())
+                    .max()
+                    .orElse(0);
+
+            if (newTotalCount < maxCommitted) {
+                throw new IllegalStateException(
+                        "Cannot reduce totalCount to " + newTotalCount +
+                                " — an existing date has " + maxCommitted + " rooms already booked/reserved for room id: " + room.getId()
+                );
+            }
+
+            inventoryRepository.updateTotalCountForFutureDates(room.getId(), newTotalCount, today);
+        }
+
+        if (priceChanged) {
+            inventoryRepository.updatePriceForFutureDates(room.getId(), room.getBasePrice(), today);
+        }
+    }
+
     public User getCurrentUser(){
         return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }

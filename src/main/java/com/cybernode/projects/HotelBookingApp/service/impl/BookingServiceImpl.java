@@ -98,8 +98,7 @@ public class BookingServiceImpl implements BookingService{
 
     @Override
     @Transactional
-    public BookingDto addGuests(Long bookingId, List<GuestDto> guestDtoList) {
-
+    public BookingDto addGuests(Long bookingId, List<Long> guestIdList) {
         log.info("Adding guests for booking with id: {}", bookingId);
 
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(() ->
@@ -114,17 +113,18 @@ public class BookingServiceImpl implements BookingService{
             throw new IllegalStateException("Booking has already expired");
         }
 
-        if(booking.getBookingStatus() != BookingStatus.RESERVED) {
+        if (booking.getBookingStatus() != BookingStatus.RESERVED) {
             throw new IllegalStateException("Booking is not under reserved state, cannot add guests");
         }
 
-        for (GuestDto guestDto: guestDtoList) {
-            Guest guest = modelMapper.map(guestDto, Guest.class);
-            guest.setUser(user);
-            guest = guestRepository.save(guest);
-            booking.getGuests().add(guest);
+        List<Guest> guests = guestRepository.findAllById(guestIdList);
+        for (Guest guest : guests) {
+            if (!guest.getUser().equals(user)) {
+                throw new UnAuthorisedException("Guest with id: "+guest.getId()+" does not belong to this user");
+            }
         }
 
+        booking.getGuests().addAll(guests);
         booking.setBookingStatus(BookingStatus.GUESTS_ADDED);
         booking = bookingRepository.save(booking);
         return modelMapper.map(booking, BookingDto.class);

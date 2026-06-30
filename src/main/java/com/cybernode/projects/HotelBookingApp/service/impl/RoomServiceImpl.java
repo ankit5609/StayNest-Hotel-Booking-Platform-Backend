@@ -17,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -113,11 +114,19 @@ public class RoomServiceImpl implements RoomService{
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: "+roomId));
 
+        BigDecimal oldBasePrice = room.getBasePrice();
+        Integer oldTotalCount = room.getTotalCount();
+
         modelMapper.map(roomDto, room);
         room.setId(roomId);
-
-//        TODO: if price or inventory is updated, then update the inventory for this room
         room = roomRepository.save(room);
+
+        boolean priceChanged = roomDto.getBasePrice() != null && oldBasePrice.compareTo(roomDto.getBasePrice()) != 0;
+        boolean countChanged = roomDto.getTotalCount() != null && !oldTotalCount.equals(roomDto.getTotalCount());
+
+        if (priceChanged || countChanged) {
+            inventoryService.updateInventoryForRoomChange(room, priceChanged, countChanged);
+        }
 
         return modelMapper.map(room, RoomDto.class);
     }

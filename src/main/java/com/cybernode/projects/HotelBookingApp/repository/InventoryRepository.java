@@ -166,4 +166,36 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
             @Param("roomsCount") Long roomsCount,
             @Param("dateCount") Long dateCount
     );
+
+    @Modifying
+    @Query("""
+            UPDATE Inventory i
+            SET i.price = :newBasePrice * i.surgeFactor
+            WHERE i.room.id = :roomId
+              AND i.date >= :today
+        """)
+    void updatePriceForFutureDates(@Param("roomId") Long roomId,
+                                   @Param("newBasePrice") BigDecimal newBasePrice,
+                                   @Param("today") LocalDate today);
+
+    @Modifying
+    @Query("""
+            UPDATE Inventory i
+            SET i.totalCount = :newTotalCount
+            WHERE i.room.id = :roomId
+              AND i.date >= :today
+        """)
+    void updateTotalCountForFutureDates(@Param("roomId") Long roomId,
+                                        @Param("newTotalCount") Integer newTotalCount,
+                                        @Param("today") LocalDate today);
+
+    @Query("""
+            SELECT i
+            FROM Inventory i
+            WHERE i.room.id = :roomId
+              AND i.date >= :today
+        """)
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    List<Inventory> findAndLockFutureInventory(@Param("roomId") Long roomId,
+                                               @Param("today") LocalDate today);
 }

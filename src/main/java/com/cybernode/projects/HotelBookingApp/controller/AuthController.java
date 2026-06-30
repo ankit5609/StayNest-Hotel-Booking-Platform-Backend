@@ -1,10 +1,8 @@
 package com.cybernode.projects.HotelBookingApp.controller;
 
 
-import com.cybernode.projects.HotelBookingApp.dto.LoginDto;
-import com.cybernode.projects.HotelBookingApp.dto.LoginResponseDto;
-import com.cybernode.projects.HotelBookingApp.dto.SignUpRequestDto;
-import com.cybernode.projects.HotelBookingApp.dto.UserDto;
+import com.cybernode.projects.HotelBookingApp.dto.*;
+import com.cybernode.projects.HotelBookingApp.entity.User;
 import com.cybernode.projects.HotelBookingApp.security.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.Cookie;
@@ -14,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,13 +36,13 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(summary = "Login request", tags = {"Auth"})
     public ResponseEntity<LoginResponseDto> login(@RequestBody LoginDto loginDto, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
-        String[] tokens = authService.login(loginDto);
+        AuthTokensDTO auth = authService.login(loginDto);
 
-        Cookie cookie = new Cookie("refreshToken", tokens[1]);
+        Cookie cookie = new Cookie("refreshToken", auth.getRefreshToken());
         cookie.setHttpOnly(true);
 
         httpServletResponse.addCookie(cookie);
-        return ResponseEntity.ok(new LoginResponseDto(tokens[0]));
+        return ResponseEntity.ok(new LoginResponseDto(auth.getAccessToken(), auth.getRoles()));
     }
 
     @PostMapping("/refresh")
@@ -55,8 +54,8 @@ public class AuthController {
                 .map(Cookie::getValue)
                 .orElseThrow(() -> new AuthenticationServiceException("Refresh token not found inside the Cookies"));
 
-        String accessToken = authService.refreshToken(refreshToken);
-        return ResponseEntity.ok(new LoginResponseDto(accessToken));
+        AuthTokensDTO auth = authService.refreshToken(refreshToken);
+        return ResponseEntity.ok(new LoginResponseDto(auth.getAccessToken(), auth.getRoles()));
     }
 
 }
