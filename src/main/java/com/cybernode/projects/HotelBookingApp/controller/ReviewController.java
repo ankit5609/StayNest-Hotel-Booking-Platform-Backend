@@ -2,6 +2,7 @@ package com.cybernode.projects.HotelBookingApp.controller;
 
 import com.cybernode.projects.HotelBookingApp.dto.ReviewDto;
 import com.cybernode.projects.HotelBookingApp.dto.ReviewRequestDto;
+import com.cybernode.projects.HotelBookingApp.dto.ReviewUpdateDto;
 import com.cybernode.projects.HotelBookingApp.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -31,5 +32,20 @@ public class ReviewController {
     public ResponseEntity<Page<ReviewDto>> getHotelReviews(@PathVariable Long hotelId, Pageable pageable) {
         Page<ReviewDto> reviews = reviewService.getReviewsForHotel(hotelId, pageable);
         return ResponseEntity.ok(reviews);
+    }
+
+    @PutMapping("/reviews/{reviewId}")
+    @Operation(summary = "Update an existing review", tags = {"Reviews"})
+    public ResponseEntity<ReviewDto> updateReview(@PathVariable Long reviewId,
+                                                  @Valid @RequestBody ReviewUpdateDto updateDto) {
+        ReviewDto reviewDto = reviewService.updateReview(reviewId, updateDto);
+        return ResponseEntity.ok(reviewDto);
+    }
+
+    @DeleteMapping("/reviews/{reviewId}")
+    @Operation(summary = "Delete a review", tags = {"Reviews"})
+    public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId) {
+        reviewService.deleteReview(reviewId);
+        return ResponseEntity.noContent().build();
     }
 }

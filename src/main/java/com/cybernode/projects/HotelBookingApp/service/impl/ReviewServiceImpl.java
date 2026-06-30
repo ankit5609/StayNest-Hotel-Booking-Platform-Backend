@@ -2,6 +2,7 @@ package com.cybernode.projects.HotelBookingApp.service.impl;
 
 import com.cybernode.projects.HotelBookingApp.dto.ReviewDto;
 import com.cybernode.projects.HotelBookingApp.dto.ReviewRequestDto;
+import com.cybernode.projects.HotelBookingApp.dto.ReviewUpdateDto;
 import com.cybernode.projects.HotelBookingApp.entity.Booking;
 import com.cybernode.projects.HotelBookingApp.entity.Review;
 import com.cybernode.projects.HotelBookingApp.entity.User;
@@ -85,6 +86,47 @@ public class ReviewServiceImpl implements ReviewService {
             dto.setGuestName(getMaskedName(review.getUser().getName()));
             return dto;
         });
+    }
+
+    @Override
+    @Transactional
+    public ReviewDto updateReview(Long reviewId, ReviewUpdateDto updateDto) {
+        log.info("Updating review with ID: {}", reviewId);
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review not found with ID: " + reviewId));
+
+        User currentUser = getCurrentUser();
+        if (!review.getUser().getId().equals(currentUser.getId())) {
+            throw new UnAuthorisedException("You can only edit your own reviews");
+        }
+
+        review.setRating(updateDto.getRating());
+        review.setComment(updateDto.getComment());
+        review = reviewRepository.save(review);
+
+        hotelRepository.recalculateRating(review.getHotel().getId());
+
+        ReviewDto dto = modelMapper.map(review, ReviewDto.class);
+        dto.setGuestName(getMaskedName(currentUser.getName()));
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public void deleteReview(Long reviewId) {
+        log.info("Deleting review with ID: {}", reviewId);
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResourceNotFoundException("Review not found with ID: " + reviewId));
+
+        User currentUser = getCurrentUser();
+        if (!review.getUser().getId().equals(currentUser.getId())) {
+            throw new UnAuthorisedException("You can only delete your own reviews");
+        }
+
+        Long hotelId = review.getHotel().getId();
+        reviewRepository.delete(review);
+
+        hotelRepository.recalculateRating(hotelId);
     }
 
     private String getMaskedName(String fullName) {
