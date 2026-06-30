@@ -21,4 +21,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     // Find stale bookings created before cutoff date matching status list
     List<Booking> findByBookingStatusInAndCreatedAtBefore(List<BookingStatus> statuses, LocalDateTime cutoff);
+
+    List<Booking> findByBookingStatus(BookingStatus bookingStatus);
 }

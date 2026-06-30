@@ -68,5 +68,7 @@ public class Booking {
     @Column(unique = true)
     private String paymentSessionId;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal refundAmount;
 
 }

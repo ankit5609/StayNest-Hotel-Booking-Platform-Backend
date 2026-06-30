@@ -20,5 +20,8 @@ public enum BookingStatus {
     PAYMENT_FAILED,
 
     // Stripe checkout session or hold expired without a payment attempt
-    EXPIRED
+    EXPIRED,
+
+    // Refund is pending Stripe response
+    REFUND_PENDING
 }

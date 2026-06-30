@@ -36,9 +36,10 @@ public class NotificationService {
         sendEmail(booking.getUser().getEmail(), subject, body);
     }
 
-    public void sendBookingCancelled(Booking booking) {
+    public void sendBookingCancelled(Booking booking, java.math.BigDecimal refundAmount) {
         String subject = "Your StayNest booking is cancelled";
-        String body = "Your booking at " + booking.getHotel().getName() + " has been successfully cancelled and your refund has been initiated.";
+        String body = String.format("Your booking at %s has been successfully cancelled. A refund of ₹%s has been initiated.",
+                booking.getHotel().getName(), refundAmount);
         sendEmail(booking.getUser().getEmail(), subject, body);
     }
 

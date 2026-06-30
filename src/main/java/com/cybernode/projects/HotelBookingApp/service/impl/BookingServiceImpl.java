@@ -59,6 +59,15 @@ public class BookingServiceImpl implements BookingService{
     @Value("${booking.expiry.minutes:10}")
     private Integer bookingExpiryMinutes;
 
+    @Value("${cancellation.full-refund-days:7}")
+    private Integer fullRefundDays;
+
+    @Value("${cancellation.partial-refund-days:3}")
+    private Integer partialRefundDays;
+
+    @Value("${cancellation.partial-refund-percent:50}")
+    private Integer partialRefundPercent;
+
     @Override
     @Transactional
     public BookingDto initialiseBooking(BookingRequest bookingRequest) {
@@ -268,6 +277,23 @@ public class BookingServiceImpl implements BookingService{
         });
     }
 
+    private BigDecimal calculateRefundAmount(Booking booking) {
+        long daysUntilCheckIn = ChronoUnit.DAYS.between(LocalDate.now(), booking.getCheckInDate());
+
+        BigDecimal refundPercent;
+        if (daysUntilCheckIn >= fullRefundDays) {
+            refundPercent = BigDecimal.valueOf(100);
+        } else if (daysUntilCheckIn >= partialRefundDays) {
+            refundPercent = BigDecimal.valueOf(partialRefundPercent);
+        } else {
+            refundPercent = BigDecimal.ZERO;
+        }
+
+        return booking.getAmount()
+                .multiply(refundPercent)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+    }
+
     @Override
     @Transactional
     public void cancelBooking(Long bookingId) {
@@ -279,11 +305,14 @@ public class BookingServiceImpl implements BookingService{
             throw new UnAuthorisedException("Booking does not belong to this user with id: "+user.getId());
         }
 
-        if(booking.getBookingStatus() != BookingStatus.CONFIRMED) {
+        if (booking.getBookingStatus() != BookingStatus.CONFIRMED) {
             throw new IllegalStateException("Only confirmed bookings can be cancelled");
         }
 
-        booking.setBookingStatus(BookingStatus.CANCELLED);
+        BigDecimal refundAmount = calculateRefundAmount(booking);
+
+        booking.setBookingStatus(BookingStatus.REFUND_PENDING);
+        booking.setRefundAmount(refundAmount);
         bookingRepository.save(booking);
 
         inventoryRepository.getInventoryAndLockBeforeUpdate(booking.getRoom().getId(), booking.getCheckInDate(),
@@ -292,20 +321,31 @@ public class BookingServiceImpl implements BookingService{
         inventoryRepository.cancelBooking(booking.getRoom().getId(), booking.getCheckInDate(),
                 booking.getCheckOutDate(), booking.getRoomsCount());
 
-        // handle the refund
-
         try {
-            Session session = Session.retrieve(booking.getPaymentSessionId());
-            RefundCreateParams refundParams = RefundCreateParams.builder()
-                    .setPaymentIntent(session.getPaymentIntent())
-                    .build();
+            if (refundAmount.compareTo(BigDecimal.ZERO) > 0) {
+                Session session = Session.retrieve(booking.getPaymentSessionId());
+                RefundCreateParams refundParams = RefundCreateParams.builder()
+                        .setPaymentIntent(session.getPaymentIntent())
+                        .setAmount(refundAmount.multiply(BigDecimal.valueOf(100)).longValue()) // Stripe wants cents
+                        .build();
 
-            Refund.create(refundParams);
+                Refund.create(refundParams);
+            }
+            booking.setBookingStatus(BookingStatus.CANCELLED);
+            bookingRepository.save(booking);
+            notificationService.sendBookingCancelled(booking, refundAmount);
         } catch (StripeException e) {
-            throw new RuntimeException(e);
+            log.error("Refund failed for booking {}: {}", booking.getId(), e.getMessage());
+            // booking stays REFUND_PENDING - needs manual reconciliation or a retry job
+            throw new RuntimeException("Refund could not be processed, please contact support", e);
         }
+    }
 
-        notificationService.sendBookingCancelled(booking);
+    @Override
+    public List<BookingDto> getRefundPendingBookings() {
+        return bookingRepository.findByBookingStatus(BookingStatus.REFUND_PENDING).stream()
+                .map(booking -> modelMapper.map(booking, BookingDto.class))
+                .collect(Collectors.toList());
     }
 
     @Override

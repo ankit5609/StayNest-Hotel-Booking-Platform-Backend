@@ -96,5 +96,11 @@ public class HotelController {
         return ResponseEntity.ok(url);
     }
 
+    @GetMapping("/bookings/refund-pending")
+    @Operation(summary = "Get all refund pending bookings", tags = {"Admin Bookings"})
+    public ResponseEntity<List<BookingDto>> getRefundPendingBookings() {
+        List<BookingDto> bookings = bookingService.getRefundPendingBookings();
+        return ResponseEntity.ok(bookings);
+    }
 }
 
