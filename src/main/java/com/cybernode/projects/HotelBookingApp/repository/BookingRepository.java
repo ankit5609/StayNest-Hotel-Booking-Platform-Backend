@@ -29,4 +29,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByBookingStatusInAndCreatedAtBefore(List<BookingStatus> statuses, LocalDateTime cutoff);
 
     List<Booking> findByBookingStatus(BookingStatus bookingStatus);
+
+    // Counts recent confirmed bookings for a hotel within a lookback window.
+    // Used to compute booking velocity signal for AI pricing (called once per
+    // hotel before iterating its inventory rows, not once per row).
+    long countByHotelAndBookingStatusAndCreatedAtAfter(Hotel hotel, BookingStatus status, LocalDateTime after);
 }
+
