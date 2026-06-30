@@ -7,6 +7,7 @@ import com.cybernode.projects.HotelBookingApp.dto.UserDto;
 import com.cybernode.projects.HotelBookingApp.entity.User;
 import com.cybernode.projects.HotelBookingApp.enums.Role;
 import com.cybernode.projects.HotelBookingApp.exception.ResourceNotFoundException;
+import io.jsonwebtoken.JwtException;
 import com.cybernode.projects.HotelBookingApp.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -67,14 +68,29 @@ public class AuthService {
 
     public AuthTokensDTO refreshToken(String refreshToken) {
         Long id = jwtService.getUserIdFromToken(refreshToken);
+        Integer tokenVersion = jwtService.getTokenVersionFromToken(refreshToken);
 
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found with id: "+id));
-        String accessToken=jwtService.generateAccessToken(user);
+
+        // Defensively check for null values to prevent NullPointerExceptions on legacy accounts
+        int currentVersion = user.getTokenVersion() != null ? user.getTokenVersion() : 0;
+        if (tokenVersion == null || !tokenVersion.equals(currentVersion)) {
+            throw new JwtException("Refresh token has been revoked");
+        }
+
+        String accessToken = jwtService.generateAccessToken(user);
         return new AuthTokensDTO(
                 accessToken,
                 "",
                 user.getRoles()
         );
+    }
+
+    public void logout(User user) {
+        // Increment tokenVersion to invalidate all issued refresh tokens on the server
+        int currentVersion = user.getTokenVersion() != null ? user.getTokenVersion() : 0;
+        user.setTokenVersion(currentVersion + 1);
+        userRepository.save(user);
     }
 
 }

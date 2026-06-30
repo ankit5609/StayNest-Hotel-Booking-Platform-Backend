@@ -10,7 +10,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import java.time.Duration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,6 +32,9 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @Value("${app.cookie.secure:false}")
+    private Boolean cookieSecure;
+
     @PostMapping("/signup")
     @Operation(summary = "Create a new account", tags = {"Auth"})
     public ResponseEntity<UserDto> signup(@Valid @RequestBody SignUpRequestDto signUpRequestDto) {
@@ -41,10 +48,15 @@ public class AuthController {
         // LoginDto is validated against validation constraints (not blank, valid email format) before processing authentication
         AuthTokensDTO auth = authService.login(loginDto);
 
-        Cookie cookie = new Cookie("refreshToken", auth.getRefreshToken());
-        cookie.setHttpOnly(true);
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", auth.getRefreshToken())
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(Duration.ofDays(180))
+                .build();
 
-        httpServletResponse.addCookie(cookie);
+        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return ResponseEntity.ok(new LoginResponseDto(auth.getAccessToken(), auth.getRoles()));
     }
 
@@ -59,6 +71,24 @@ public class AuthController {
 
         AuthTokensDTO auth = authService.refreshToken(refreshToken);
         return ResponseEntity.ok(new LoginResponseDto(auth.getAccessToken(), auth.getRoles()));
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Logout and revoke refresh tokens", tags = {"Auth"})
+    public ResponseEntity<Void> logout(HttpServletResponse httpServletResponse) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        authService.logout(user);
+
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(0) // expire immediately
+                .build();
+        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+        return ResponseEntity.noContent().build();
     }
 
 }

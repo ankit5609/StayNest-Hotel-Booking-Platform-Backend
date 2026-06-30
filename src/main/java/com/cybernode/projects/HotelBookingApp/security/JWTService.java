@@ -35,6 +35,7 @@ public class JWTService {
     public String generateRefreshToken(User user) {
         return Jwts.builder()
                 .subject(user.getId().toString())
+                .claim("tokenVersion", user.getTokenVersion() != null ? user.getTokenVersion() : 0)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + 1000L *60*60*24*30*6))
                 .signWith(getSecretKey())
@@ -48,6 +49,15 @@ public class JWTService {
                 .parseSignedClaims(token)
                 .getPayload();
         return Long.valueOf(claims.getSubject());
+    }
+
+    public Integer getTokenVersionFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSecretKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return claims.get("tokenVersion", Integer.class);
     }
 
 }

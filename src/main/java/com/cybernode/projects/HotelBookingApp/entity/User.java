@@ -41,6 +41,9 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Set<Role> roles;
 
+    @Column(nullable = false, columnDefinition = "integer default 0")
+    private Integer tokenVersion = 0;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()
