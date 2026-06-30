@@ -11,6 +11,7 @@ import com.cybernode.projects.HotelBookingApp.exception.UnAuthorisedException;
 import com.cybernode.projects.HotelBookingApp.repository.*;
 import com.cybernode.projects.HotelBookingApp.service.BookingService;
 import com.cybernode.projects.HotelBookingApp.service.CheckoutService;
+import com.cybernode.projects.HotelBookingApp.service.NotificationService;
 import com.cybernode.projects.HotelBookingApp.strategy.PricingService;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
@@ -50,6 +51,7 @@ public class BookingServiceImpl implements BookingService{
     private final InventoryRepository inventoryRepository;
     private final CheckoutService checkoutService;
     private final PricingService pricingService;
+    private final NotificationService notificationService;
 
     @Value("${frontend.url}")
     private String frontendUrl;
@@ -198,6 +200,7 @@ public class BookingServiceImpl implements BookingService{
                 booking.getCheckOutDate(), booking.getRoomsCount());
 
         log.info("Successfully confirmed the booking for Booking ID: {}", booking.getId());
+        notificationService.sendBookingConfirmation(booking);
     }
 
     private void handleCheckoutExpired(Event event) {
@@ -225,6 +228,7 @@ public class BookingServiceImpl implements BookingService{
             booking.setBookingStatus(BookingStatus.EXPIRED);
             bookingRepository.save(booking);
             log.info("Booking {} expired via Stripe session expiry, inventory released", booking.getId());
+            notificationService.sendBookingExpired(booking);
         });
     }
 
@@ -260,6 +264,7 @@ public class BookingServiceImpl implements BookingService{
             booking.setBookingStatus(BookingStatus.PAYMENT_FAILED);
             bookingRepository.save(booking);
             log.info("Booking {} marked as PAYMENT_FAILED, inventory released", booking.getId());
+            notificationService.sendPaymentFailed(booking);
         });
     }
 
@@ -299,6 +304,8 @@ public class BookingServiceImpl implements BookingService{
         } catch (StripeException e) {
             throw new RuntimeException(e);
         }
+
+        notificationService.sendBookingCancelled(booking);
     }
 
     @Override
@@ -400,6 +407,7 @@ public class BookingServiceImpl implements BookingService{
 
             booking.setBookingStatus(BookingStatus.EXPIRED);
             bookingRepository.save(booking);
+            notificationService.sendBookingExpired(booking);
         }
     }
 
