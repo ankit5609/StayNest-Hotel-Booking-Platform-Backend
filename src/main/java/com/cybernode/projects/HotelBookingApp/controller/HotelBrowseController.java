@@ -2,9 +2,11 @@ package com.cybernode.projects.HotelBookingApp.controller;
 
 import com.cybernode.projects.HotelBookingApp.dto.*;
 import com.cybernode.projects.HotelBookingApp.enums.SortOption;
+import com.cybernode.projects.HotelBookingApp.service.ConversationalSearchService;
 import com.cybernode.projects.HotelBookingApp.service.HotelService;
 import com.cybernode.projects.HotelBookingApp.service.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +23,7 @@ public class HotelBrowseController {
 
     private final InventoryService inventoryService;
     private final HotelService hotelService;
+    private final ConversationalSearchService conversationalSearchService;
 
     @GetMapping("/search")
     @Operation(summary = "Search hotels", tags = {"Browse Hotels"})
@@ -65,5 +68,12 @@ public class HotelBrowseController {
         hotelInfoRequestDto.setRoomsCount(roomsCount);
 
         return ResponseEntity.ok(hotelService.getHotelInfoById(hotelId, hotelInfoRequestDto));
+    }
+
+    @PostMapping("/search/nl")
+    @Operation(summary = "Search hotels using natural language", tags = {"Browse Hotels"})
+    public ResponseEntity<NaturalLanguageSearchResponseDto> searchHotelsNaturalLanguage(
+            @Valid @RequestBody NaturalLanguageSearchRequestDto request) {
+        return ResponseEntity.ok(conversationalSearchService.search(request.getQuery()));
     }
 }
