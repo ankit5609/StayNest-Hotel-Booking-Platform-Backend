@@ -12,6 +12,7 @@ import com.cybernode.projects.HotelBookingApp.exception.UnAuthorisedException;
 import com.cybernode.projects.HotelBookingApp.repository.BookingRepository;
 import com.cybernode.projects.HotelBookingApp.repository.HotelRepository;
 import com.cybernode.projects.HotelBookingApp.repository.ReviewRepository;
+import com.cybernode.projects.HotelBookingApp.service.ReviewEmbeddingService;
 import com.cybernode.projects.HotelBookingApp.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final BookingRepository bookingRepository;
     private final HotelRepository hotelRepository;
     private final ModelMapper modelMapper;
+    private final ReviewEmbeddingService reviewEmbeddingService;
 
     @Override
     @Transactional
@@ -72,6 +74,8 @@ public class ReviewServiceImpl implements ReviewService {
         // Recalculate average rating and review count on the hotel
         hotelRepository.recalculateRating(booking.getHotel().getId());
 
+        reviewEmbeddingService.indexReview(review);
+
         ReviewDto dto = modelMapper.map(review, ReviewDto.class);
         dto.setGuestName(getMaskedName(currentUser.getName()));
         return dto;
@@ -106,6 +110,8 @@ public class ReviewServiceImpl implements ReviewService {
 
         hotelRepository.recalculateRating(review.getHotel().getId());
 
+        reviewEmbeddingService.indexReview(review);
+
         ReviewDto dto = modelMapper.map(review, ReviewDto.class);
         dto.setGuestName(getMaskedName(currentUser.getName()));
         return dto;
@@ -127,6 +133,8 @@ public class ReviewServiceImpl implements ReviewService {
         reviewRepository.delete(review);
 
         hotelRepository.recalculateRating(hotelId);
+
+        reviewEmbeddingService.deleteReview(reviewId);
     }
 
     private String getMaskedName(String fullName) {

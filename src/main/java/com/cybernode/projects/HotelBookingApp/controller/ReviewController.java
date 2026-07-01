@@ -1,8 +1,10 @@
 package com.cybernode.projects.HotelBookingApp.controller;
 
+import com.cybernode.projects.HotelBookingApp.dto.HotelQaResponseDto;
 import com.cybernode.projects.HotelBookingApp.dto.ReviewDto;
 import com.cybernode.projects.HotelBookingApp.dto.ReviewRequestDto;
 import com.cybernode.projects.HotelBookingApp.dto.ReviewUpdateDto;
+import com.cybernode.projects.HotelBookingApp.service.HotelQaService;
 import com.cybernode.projects.HotelBookingApp.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class ReviewController {
 
     private final ReviewService reviewService;
+    private final HotelQaService hotelQaService;
 
     @PostMapping("/reviews")
     @Operation(summary = "Submit a new review for a booking", tags = {"Reviews"})
@@ -47,5 +50,12 @@ public class ReviewController {
     public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId) {
         reviewService.deleteReview(reviewId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/hotels/{hotelId}/ask")
+    @Operation(summary = "Ask a question about a hotel, answered from its reviews", tags = {"Reviews"})
+    public ResponseEntity<HotelQaResponseDto> askAboutHotel(@PathVariable Long hotelId,
+                                                            @RequestParam String question) {
+        return ResponseEntity.ok(hotelQaService.ask(hotelId, question));
     }
 }
