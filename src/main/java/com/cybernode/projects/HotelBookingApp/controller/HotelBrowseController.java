@@ -9,6 +9,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -75,5 +78,25 @@ public class HotelBrowseController {
     public ResponseEntity<NaturalLanguageSearchResponseDto> searchHotelsNaturalLanguage(
             @Valid @RequestBody NaturalLanguageSearchRequestDto request) {
         return ResponseEntity.ok(conversationalSearchService.search(request.getQuery()));
+    }
+
+    @GetMapping
+    @Operation(summary = "Get all active hotels with pagination, optional city filter and sorting", tags = {"Browse Hotels"})
+    public ResponseEntity<Page<HotelDto>> getActiveHotels(
+            @RequestParam(required = false) String city,
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(defaultValue = "top_rated") String sort) {
+
+        Sort sortOrder;
+        if ("newest".equalsIgnoreCase(sort)) {
+            sortOrder = Sort.by(Sort.Direction.DESC, "createdAt");
+        } else {
+            sortOrder = Sort.by(Sort.Direction.DESC, "averageRating")
+                    .and(Sort.by(Sort.Direction.DESC, "reviewCount"));
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sortOrder);
+        return ResponseEntity.ok(hotelService.getActiveHotels(city, pageable));
     }
 }

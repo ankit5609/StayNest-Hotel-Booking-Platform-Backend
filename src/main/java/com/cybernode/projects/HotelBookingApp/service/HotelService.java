@@ -24,4 +24,6 @@ public interface HotelService {
     Page<HotelDto> getAllHotels(Pageable pageable);
 
     String uploadHotelPhoto(Long hotelId, MultipartFile file);
+
+    Page<HotelDto> getActiveHotels(String city, Pageable pageable);
 }

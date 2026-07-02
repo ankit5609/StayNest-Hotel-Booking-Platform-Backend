@@ -33,4 +33,6 @@ public interface BookingService {
     Page<BookingDto> getMyBookings(Pageable pageable);
 
     List<BookingDto> getRefundPendingBookings();
+
+    BookingDto getBookingDetails(Long bookingId);
 }

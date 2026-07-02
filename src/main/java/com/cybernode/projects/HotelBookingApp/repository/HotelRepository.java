@@ -26,4 +26,8 @@ public interface HotelRepository extends JpaRepository<Hotel, Long> {
             WHERE h.id = :hotelId
             """)
     void recalculateRating(@Param("hotelId") Long hotelId);
+
+    Page<Hotel> findByActiveTrue(Pageable pageable);
+
+    Page<Hotel> findByActiveTrueAndCityIgnoreCase(String city, Pageable pageable);
 }

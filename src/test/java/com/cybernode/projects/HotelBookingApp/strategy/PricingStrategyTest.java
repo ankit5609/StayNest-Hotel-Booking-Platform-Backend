@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,7 +49,7 @@ public class PricingStrategyTest {
     @Test
     public void testOccupancyPricingStrategy_HighOccupancy() {
         inventory.setBookedCount(9); // 9/10 = 90% > 80%
-        PricingStrategy strategy = new OccupancyPricingStrategy(new BasePricingStrategy());
+        PricingStrategy strategy = new OccupancyPricingStrategy(new BasePricingStrategy(), 0.8, 1.2);
         BigDecimal price = strategy.calculatePrice(inventory);
         assertEquals(0, BigDecimal.valueOf(120.00).compareTo(price)); // 100 * 1.2
     }
@@ -56,7 +57,7 @@ public class PricingStrategyTest {
     @Test
     public void testOccupancyPricingStrategy_LowOccupancy() {
         inventory.setBookedCount(5); // 5/10 = 50% <= 80%
-        PricingStrategy strategy = new OccupancyPricingStrategy(new BasePricingStrategy());
+        PricingStrategy strategy = new OccupancyPricingStrategy(new BasePricingStrategy(), 0.8, 1.2);
         BigDecimal price = strategy.calculatePrice(inventory);
         assertEquals(0, BigDecimal.valueOf(100.00).compareTo(price)); // 100
     }
@@ -64,15 +65,26 @@ public class PricingStrategyTest {
     @Test
     public void testUrgencyPricingStrategy_Urgent() {
         inventory.setDate(LocalDate.now().plusDays(3)); // < 7 days out
-        PricingStrategy strategy = new UrgencyPricingStrategy(new BasePricingStrategy());
+        PricingStrategy strategy = new UrgencyPricingStrategy(new BasePricingStrategy(), 7, 1.15);
         BigDecimal price = strategy.calculatePrice(inventory);
         assertEquals(0, BigDecimal.valueOf(115.00).compareTo(price)); // 100 * 1.15
     }
 
     @Test
-    public void testHolidayPricingStrategy() {
-        PricingStrategy strategy = new HolidayPricingStrategy(new BasePricingStrategy());
+    public void testHolidayPricingStrategy_Holiday() {
+        LocalDate holiday = LocalDate.now().plusDays(2);
+        inventory.setDate(holiday);
+        PricingStrategy strategy = new HolidayPricingStrategy(new BasePricingStrategy(), Set.of(holiday), 1.25);
         BigDecimal price = strategy.calculatePrice(inventory);
         assertEquals(0, BigDecimal.valueOf(125.00).compareTo(price)); // 100 * 1.25
+    }
+
+    @Test
+    public void testHolidayPricingStrategy_NonHoliday() {
+        LocalDate nonHoliday = LocalDate.now().plusDays(2);
+        inventory.setDate(nonHoliday);
+        PricingStrategy strategy = new HolidayPricingStrategy(new BasePricingStrategy(), Set.of(), 1.25);
+        BigDecimal price = strategy.calculatePrice(inventory);
+        assertEquals(0, BigDecimal.valueOf(100.00).compareTo(price)); // 100
     }
 }

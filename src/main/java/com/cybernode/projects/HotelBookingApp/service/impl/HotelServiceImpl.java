@@ -199,4 +199,17 @@ public class HotelServiceImpl implements HotelService{
         log.info("Successfully uploaded photo to Cloudinary and saved to hotel {}", hotelId);
         return imageUrl;
     }
+
+    @Override
+    public Page<HotelDto> getActiveHotels(String city, Pageable pageable) {
+        log.info("Getting active hotels. City filter: {}", city);
+        Pageable clamped = clampPageSize(pageable);
+        Page<Hotel> hotelsPage;
+        if (city == null || city.trim().isEmpty()) {
+            hotelsPage = hotelRepository.findByActiveTrue(clamped);
+        } else {
+            hotelsPage = hotelRepository.findByActiveTrueAndCityIgnoreCase(city.trim(), clamped);
+        }
+        return hotelsPage.map(hotel -> modelMapper.map(hotel, HotelDto.class));
+    }
 }

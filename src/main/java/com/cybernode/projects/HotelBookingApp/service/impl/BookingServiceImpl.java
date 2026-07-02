@@ -170,7 +170,8 @@ public class BookingServiceImpl implements BookingService{
         }
 
         String sessionUrl = checkoutService.getCheckoutSession(booking,
-                frontendUrl+"/payments/success", frontendUrl+"/payments/failure");
+                frontendUrl + "/payments/success?bookingId=" + bookingId + "&session_id={CHECKOUT_SESSION_ID}",
+                frontendUrl + "/payments/failure?bookingId=" + bookingId);
 
         booking.setBookingStatus(BookingStatus.PAYMENTS_PENDING);
         bookingRepository.save(booking);
@@ -459,5 +460,17 @@ public class BookingServiceImpl implements BookingService{
 
     public User getCurrentUser(){
         return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    }
+
+    @Override
+    public BookingDto getBookingDetails(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow(
+                () -> new ResourceNotFoundException("Booking not found with id: " + bookingId)
+        );
+        User user = getCurrentUser();
+        if (!user.equals(booking.getUser())) {
+            throw new UnAuthorisedException("Booking does not belong to this user");
+        }
+        return modelMapper.map(booking, BookingDto.class);
     }
 }
