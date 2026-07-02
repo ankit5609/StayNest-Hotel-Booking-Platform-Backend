@@ -43,6 +43,14 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Set<Role> roles;
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "user_wishlist",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "hotel_id")
+    )
+    private Set<Hotel> wishlist = new java.util.HashSet<>();
+
     @Column(nullable = false, columnDefinition = "integer default 0")
     private Integer tokenVersion = 0;
 

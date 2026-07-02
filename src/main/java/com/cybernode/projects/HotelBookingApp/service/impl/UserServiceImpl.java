@@ -15,7 +15,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import com.cybernode.projects.HotelBookingApp.dto.HotelDto;
+import com.cybernode.projects.HotelBookingApp.entity.Hotel;
+import com.cybernode.projects.HotelBookingApp.repository.HotelRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +32,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final ImageUploadService imageUploadService;
+    private final HotelRepository hotelRepository;
 
     @Override
     public User getUserById(Long id) {
@@ -67,5 +75,43 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         user.setAvatarUrl(imageUrl);
         userRepository.save(user);
         return imageUrl;
+    }
+
+    @Override
+    @Transactional
+    public void addHotelToWishlist(Long hotelId) {
+        log.info("Adding hotel with ID {} to user wishlist", hotelId);
+        User user = getCurrentUser();
+        User fullUser = userRepository.findById(user.getId()).orElseThrow(
+                () -> new ResourceNotFoundException("User not found")
+        );
+        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(
+                () -> new ResourceNotFoundException("Hotel not found with ID: " + hotelId)
+        );
+        fullUser.getWishlist().add(hotel);
+        userRepository.save(fullUser);
+    }
+
+    @Override
+    @Transactional
+    public void removeHotelFromWishlist(Long hotelId) {
+        log.info("Removing hotel with ID {} from user wishlist", hotelId);
+        User user = getCurrentUser();
+        User fullUser = userRepository.findById(user.getId()).orElseThrow(
+                () -> new ResourceNotFoundException("User not found")
+        );
+        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(
+                () -> new ResourceNotFoundException("Hotel not found with ID: " + hotelId)
+        );
+        fullUser.getWishlist().remove(hotel);
+        userRepository.save(fullUser);
+    }
+
+    @Override
+    public Page<HotelDto> getWishlist(Pageable pageable) {
+        log.info("Fetching wishlist for current user");
+        User user = getCurrentUser();
+        Page<Hotel> hotels = hotelRepository.findWishlistByUserId(user.getId(), pageable);
+        return hotels.map(hotel -> modelMapper.map(hotel, HotelDto.class));
     }
 }

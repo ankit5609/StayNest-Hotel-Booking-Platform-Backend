@@ -30,4 +30,7 @@ public interface HotelRepository extends JpaRepository<Hotel, Long> {
     Page<Hotel> findByActiveTrue(Pageable pageable);
 
     Page<Hotel> findByActiveTrueAndCityIgnoreCase(String city, Pageable pageable);
+
+    @Query("SELECT h FROM User u JOIN u.wishlist h WHERE u.id = :userId")
+    Page<Hotel> findWishlistByUserId(@Param("userId") Long userId, Pageable pageable);
 }

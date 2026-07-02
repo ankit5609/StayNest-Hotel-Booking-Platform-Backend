@@ -14,4 +14,10 @@ public interface UserService {
     UserDto getMyProfile();
 
     String uploadProfilePhoto(org.springframework.web.multipart.MultipartFile file);
+
+    void addHotelToWishlist(Long hotelId);
+
+    void removeHotelFromWishlist(Long hotelId);
+
+    org.springframework.data.domain.Page<com.cybernode.projects.HotelBookingApp.dto.HotelDto> getWishlist(org.springframework.data.domain.Pageable pageable);
 }

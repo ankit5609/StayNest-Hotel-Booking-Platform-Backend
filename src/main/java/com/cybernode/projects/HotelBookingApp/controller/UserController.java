@@ -4,6 +4,7 @@ import com.cybernode.projects.HotelBookingApp.dto.BookingDto;
 import com.cybernode.projects.HotelBookingApp.dto.GuestDto;
 import com.cybernode.projects.HotelBookingApp.dto.ProfileUpdateRequestDto;
 import com.cybernode.projects.HotelBookingApp.dto.UserDto;
+import com.cybernode.projects.HotelBookingApp.dto.HotelDto;
 import com.cybernode.projects.HotelBookingApp.dto.ReviewDto;
 import com.cybernode.projects.HotelBookingApp.service.BookingService;
 import com.cybernode.projects.HotelBookingApp.service.GuestService;
@@ -95,5 +96,26 @@ public class UserController {
     public ResponseEntity<Page<ReviewDto>> getMyReviews(
             @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(reviewService.getMyReviews(pageable));
+    }
+
+    @PostMapping("/wishlist/{hotelId}")
+    @Operation(summary = "Add a hotel to wishlist", tags = {"Profile"})
+    public ResponseEntity<Void> addHotelToWishlist(@PathVariable Long hotelId) {
+        userService.addHotelToWishlist(hotelId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/wishlist/{hotelId}")
+    @Operation(summary = "Remove a hotel from wishlist", tags = {"Profile"})
+    public ResponseEntity<Void> removeHotelFromWishlist(@PathVariable Long hotelId) {
+        userService.removeHotelFromWishlist(hotelId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/wishlist")
+    @Operation(summary = "Get my bookmarked hotels", tags = {"Profile"})
+    public ResponseEntity<Page<HotelDto>> getWishlist(
+            @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(userService.getWishlist(pageable));
     }
 }
