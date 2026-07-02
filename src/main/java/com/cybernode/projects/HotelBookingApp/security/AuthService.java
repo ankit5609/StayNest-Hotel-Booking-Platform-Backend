@@ -17,6 +17,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.cybernode.projects.HotelBookingApp.dto.ForgotPasswordRequestDto;
+import com.cybernode.projects.HotelBookingApp.dto.ResetPasswordRequestDto;
+import com.cybernode.projects.HotelBookingApp.service.NotificationService;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import java.util.Set;
 
 @Service
@@ -28,6 +34,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JWTService jwtService;
+    private final NotificationService notificationService;
 
     public UserDto signUp(SignUpRequestDto signUpRequestDto) {
 
@@ -93,4 +100,34 @@ public class AuthService {
         userRepository.save(user);
     }
 
+    public void forgotPassword(ForgotPasswordRequestDto dto) {
+        User user = userRepository.findByEmail(dto.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + dto.getEmail()));
+
+        String token = UUID.randomUUID().toString();
+        user.setPasswordResetToken(token);
+        user.setPasswordResetTokenExpiresAt(LocalDateTime.now().plusMinutes(15));
+        userRepository.save(user);
+
+        notificationService.sendPasswordResetEmail(user.getEmail(), token);
+    }
+
+    public void resetPassword(ResetPasswordRequestDto dto) {
+        User user = userRepository.findByPasswordResetToken(dto.getToken())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid password reset token"));
+
+        if (user.getPasswordResetTokenExpiresAt() == null || user.getPasswordResetTokenExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Password reset token has expired");
+        }
+
+        user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        user.setPasswordResetToken(null);
+        user.setPasswordResetTokenExpiresAt(null);
+
+        // Force log out of all active devices/sessions upon password reset
+        int currentVersion = user.getTokenVersion() != null ? user.getTokenVersion() : 0;
+        user.setTokenVersion(currentVersion + 1);
+
+        userRepository.save(user);
+    }
 }

@@ -36,3 +36,14 @@ build/
 src/main/resources/application.properties
 .env
 brain.md
+
+# Design tooling
+.impeccable/
+.agents/
+.codex/
+.gemini/
+DESIGN.md
+PRODUCT.md
+
+# Generated API docs
+openapi.json

@@ -44,6 +44,10 @@ public class User implements UserDetails {
     @Column(nullable = false, columnDefinition = "integer default 0")
     private Integer tokenVersion = 0;
 
+    private String passwordResetToken;
+
+    private java.time.LocalDateTime passwordResetTokenExpiresAt;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()

@@ -18,6 +18,24 @@ public class NotificationService {
     @Value("${mail.from.address}")
     private String fromAddress;
 
+    @Value("${frontend.url}")
+    private String frontendUrl;
+
+    public void sendPasswordResetEmail(String to, String token) {
+        String subject = "Reset your StayNest password";
+        String body = String.format("""
+                Hi,
+
+                You requested to reset your password. Please use the following link to reset your password:
+                %s/reset-password?token=%s
+
+                This link will expire in 15 minutes.
+
+                If you did not request a password reset, please ignore this email.
+                """, frontendUrl, token);
+        sendEmail(to, subject, body);
+    }
+
     public void sendBookingConfirmation(Booking booking) {
         String subject = "Your StayNest booking is confirmed!";
         String body = buildConfirmationBody(booking);

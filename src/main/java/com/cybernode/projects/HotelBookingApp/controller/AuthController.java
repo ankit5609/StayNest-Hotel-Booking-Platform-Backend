@@ -1,6 +1,7 @@
 package com.cybernode.projects.HotelBookingApp.controller;
 
 
+import com.cybernode.projects.HotelBookingApp.advice.ApiResponse;
 import com.cybernode.projects.HotelBookingApp.dto.*;
 import com.cybernode.projects.HotelBookingApp.entity.User;
 import com.cybernode.projects.HotelBookingApp.security.AuthService;
@@ -89,6 +90,22 @@ public class AuthController {
         httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Initiate forgot password request", tags = {"Auth"})
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDto dto) {
+        authService.forgotPassword(dto);
+        ApiResponse<String> response = new ApiResponse<>("Password reset email sent successfully");
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset password using token", tags = {"Auth"})
+    public ResponseEntity<ApiResponse<String>> resetPassword(@Valid @RequestBody ResetPasswordRequestDto dto) {
+        authService.resetPassword(dto);
+        ApiResponse<String> response = new ApiResponse<>("Password reset successfully");
+        return ResponseEntity.ok(response);
     }
 
 }

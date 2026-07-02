@@ -1,5 +1,6 @@
 package com.cybernode.projects.HotelBookingApp.strategy;
 
+import com.cybernode.projects.HotelBookingApp.config.PricingRuleProperties;
 import com.cybernode.projects.HotelBookingApp.entity.Inventory;
 import com.cybernode.projects.HotelBookingApp.service.AiPricingService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import java.util.List;
 public class PricingService {
 
     private final AiPricingService aiPricingService;
+    private final PricingRuleProperties rules;
 
     @Value("${pricing.ai.enabled}")
     private boolean aiEnabled;
@@ -40,9 +42,12 @@ public class PricingService {
 
         // Deterministic decorator chain (order matters -- each wraps the previous)
         pricingStrategy = new SurgePricingStrategy(pricingStrategy);
-        pricingStrategy = new OccupancyPricingStrategy(pricingStrategy);
-        pricingStrategy = new UrgencyPricingStrategy(pricingStrategy);
-        pricingStrategy = new HolidayPricingStrategy(pricingStrategy);
+        pricingStrategy = new OccupancyPricingStrategy(
+                pricingStrategy, rules.getOccupancyThreshold(), rules.getOccupancyMultiplier());
+        pricingStrategy = new UrgencyPricingStrategy(
+                pricingStrategy, rules.getUrgencyWindowDays(), rules.getUrgencyMultiplier());
+        pricingStrategy = new HolidayPricingStrategy(
+                pricingStrategy, rules.getHolidayDates(), rules.getHolidayMultiplier());
 
         // AI decorator is outermost -- it sees the fully adjusted deterministic price.
         if (aiEnabled) {
