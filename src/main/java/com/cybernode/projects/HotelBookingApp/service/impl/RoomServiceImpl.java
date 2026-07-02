@@ -9,6 +9,7 @@ import com.cybernode.projects.HotelBookingApp.exception.UnAuthorisedException;
 import com.cybernode.projects.HotelBookingApp.repository.HotelRepository;
 import com.cybernode.projects.HotelBookingApp.repository.RoomRepository;
 import com.cybernode.projects.HotelBookingApp.service.InventoryService;
+import com.cybernode.projects.HotelBookingApp.service.ImageUploadService;
 import com.cybernode.projects.HotelBookingApp.service.RoomService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -30,6 +32,7 @@ public class RoomServiceImpl implements RoomService{
     private final HotelRepository hotelRepository;
     private final InventoryService inventoryService;
     private final ModelMapper modelMapper;
+    private final ImageUploadService imageUploadService;
 
     @Override
     public RoomDto createNewRoom(Long hotelId, RoomDto roomDto) {
@@ -133,5 +136,35 @@ public class RoomServiceImpl implements RoomService{
 
     public User getCurrentUser(){
         return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    }
+
+    @Override
+    @Transactional
+    public String uploadRoomPhoto(Long roomId, MultipartFile file) {
+        log.info("Uploading photo for room with ID: {}", roomId);
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
+
+        User user = getCurrentUser();
+        if (!user.equals(room.getHotel().getOwner())) {
+            throw new UnAuthorisedException("This user does not own this hotel with id: " + room.getHotel().getId());
+        }
+
+        String imageUrl = imageUploadService.uploadImage(file);
+
+        String[] currentPhotos = room.getPhotos();
+        String[] newPhotos;
+        if (currentPhotos == null) {
+            newPhotos = new String[]{imageUrl};
+        } else {
+            newPhotos = new String[currentPhotos.length + 1];
+            System.arraycopy(currentPhotos, 0, newPhotos, 0, currentPhotos.length);
+            newPhotos[currentPhotos.length] = imageUrl;
+        }
+        room.setPhotos(newPhotos);
+        roomRepository.save(room);
+
+        log.info("Successfully uploaded photo to Cloudinary and saved to room {}", roomId);
+        return imageUrl;
     }
 }

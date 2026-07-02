@@ -4,9 +4,11 @@ import com.cybernode.projects.HotelBookingApp.dto.BookingDto;
 import com.cybernode.projects.HotelBookingApp.dto.GuestDto;
 import com.cybernode.projects.HotelBookingApp.dto.ProfileUpdateRequestDto;
 import com.cybernode.projects.HotelBookingApp.dto.UserDto;
+import com.cybernode.projects.HotelBookingApp.dto.ReviewDto;
 import com.cybernode.projects.HotelBookingApp.service.BookingService;
 import com.cybernode.projects.HotelBookingApp.service.GuestService;
 import com.cybernode.projects.HotelBookingApp.service.UserService;
+import com.cybernode.projects.HotelBookingApp.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ public class UserController {
     private final UserService userService;
     private final BookingService bookingService;
     private final GuestService guestService;
+    private final ReviewService reviewService;
 
     @PatchMapping("/profile")
     @Operation(summary = "Update the user profile", tags = {"Profile"})
@@ -36,6 +39,13 @@ public class UserController {
         userService.updateProfile(profileUpdateRequestDto);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping(value = "/profile/photo", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload a profile photo", tags = {"Profile"})
+    public ResponseEntity<String> uploadProfilePhoto(@RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        String url = userService.uploadProfilePhoto(file);
+        return ResponseEntity.ok(url);
     }
 
     @GetMapping("/myBookings")
@@ -80,4 +90,10 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/myReviews")
+    @Operation(summary = "Get all my submitted reviews", tags = {"Profile"})
+    public ResponseEntity<Page<ReviewDto>> getMyReviews(
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(reviewService.getMyReviews(pageable));
+    }
 }

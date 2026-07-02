@@ -35,4 +35,6 @@ public interface BookingService {
     List<BookingDto> getRefundPendingBookings();
 
     BookingDto getBookingDetails(Long bookingId);
+
+    void settleRefund(Long bookingId);
 }

@@ -19,4 +19,6 @@ public class ProfileUpdateRequestDto {
 
     // Optional field representing user gender
     private Gender gender;
+
+    private String avatarUrl;
 }

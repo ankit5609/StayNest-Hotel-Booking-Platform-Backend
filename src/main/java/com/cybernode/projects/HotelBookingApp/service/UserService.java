@@ -12,4 +12,6 @@ public interface UserService {
     void updateProfile(ProfileUpdateRequestDto profileUpdateRequestDto);
 
     UserDto getMyProfile();
+
+    String uploadProfilePhoto(org.springframework.web.multipart.MultipartFile file);
 }

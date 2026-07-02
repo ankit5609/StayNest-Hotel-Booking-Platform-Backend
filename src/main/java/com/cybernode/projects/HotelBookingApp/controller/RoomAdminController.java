@@ -55,4 +55,13 @@ public class RoomAdminController {
         return ResponseEntity.ok(roomService.updateRoomById(hotelId, roomId, roomDto));
     }
 
+    @PostMapping("/{roomId}/photos")
+    @Operation(summary = "Upload a photo for a room", tags = {"Admin Inventory"})
+    public ResponseEntity<String> uploadRoomPhoto(@PathVariable Long hotelId,
+                                                   @PathVariable Long roomId,
+                                                   @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        String url = roomService.uploadRoomPhoto(roomId, file);
+        return ResponseEntity.ok(url);
+    }
+
 }

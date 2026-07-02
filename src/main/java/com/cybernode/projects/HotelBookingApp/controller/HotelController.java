@@ -109,5 +109,12 @@ public class HotelController {
         List<BookingDto> bookings = bookingService.getRefundPendingBookings();
         return ResponseEntity.ok(bookings);
     }
+
+    @PostMapping("/bookings/{bookingId}/refund")
+    @Operation(summary = "Manually settle a pending refund", tags = {"Admin Bookings"})
+    public ResponseEntity<Void> settleRefund(@PathVariable Long bookingId) {
+        bookingService.settleRefund(bookingId);
+        return ResponseEntity.noContent().build();
+    }
 }
 

@@ -473,4 +473,21 @@ public class BookingServiceImpl implements BookingService{
         }
         return modelMapper.map(booking, BookingDto.class);
     }
+
+    @Override
+    @Transactional
+    public void settleRefund(Long bookingId) {
+        log.info("Manually settling refund for booking ID: {}", bookingId);
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow(
+                () -> new ResourceNotFoundException("Booking not found with id: " + bookingId)
+        );
+
+        if (booking.getBookingStatus() != BookingStatus.REFUND_PENDING) {
+            throw new IllegalStateException("Only bookings with REFUND_PENDING status can be manually settled");
+        }
+
+        booking.setBookingStatus(BookingStatus.CANCELLED);
+        bookingRepository.save(booking);
+        notificationService.sendBookingCancelled(booking, booking.getRefundAmount());
+    }
 }

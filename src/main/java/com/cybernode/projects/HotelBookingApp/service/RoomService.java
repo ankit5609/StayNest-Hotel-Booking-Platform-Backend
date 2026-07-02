@@ -16,4 +16,6 @@ public interface RoomService {
     void deleteRoomById(Long roomId);
 
     RoomDto updateRoomById(Long hotelId, Long roomId, RoomDto roomDto);
+
+    String uploadRoomPhoto(Long roomId, org.springframework.web.multipart.MultipartFile file);
 }

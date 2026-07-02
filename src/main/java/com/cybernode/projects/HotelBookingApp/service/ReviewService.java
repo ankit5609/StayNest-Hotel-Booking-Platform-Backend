@@ -11,4 +11,5 @@ public interface ReviewService {
     Page<ReviewDto> getReviewsForHotel(Long hotelId, Pageable pageable);
     ReviewDto updateReview(Long reviewId, ReviewUpdateDto updateDto);
     void deleteReview(Long reviewId);
+    Page<ReviewDto> getMyReviews(Pageable pageable);
 }

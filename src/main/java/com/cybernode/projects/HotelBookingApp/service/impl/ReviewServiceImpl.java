@@ -148,4 +148,16 @@ public class ReviewServiceImpl implements ReviewService {
     private User getCurrentUser() {
         return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
+
+    @Override
+    public Page<ReviewDto> getMyReviews(Pageable pageable) {
+        log.info("Fetching reviews written by current user");
+        User currentUser = getCurrentUser();
+        Page<Review> reviews = reviewRepository.findByUserId(currentUser.getId(), pageable);
+        return reviews.map(review -> {
+            ReviewDto dto = modelMapper.map(review, ReviewDto.class);
+            dto.setGuestName(getMaskedName(currentUser.getName()));
+            return dto;
+        });
+    }
 }
