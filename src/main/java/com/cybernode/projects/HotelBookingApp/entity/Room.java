@@ -3,7 +3,9 @@ package com.cybernode.projects.HotelBookingApp.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -31,9 +33,11 @@ public class Room {
     private BigDecimal basePrice;
 
     @Column(columnDefinition = "TEXT[]")
+    @JdbcTypeCode(SqlTypes.ARRAY)
     private String[] photos;
 
     @Column(columnDefinition = "TEXT[]")
+    @JdbcTypeCode(SqlTypes.ARRAY)
     private String[] amenities;
 
     @Column(nullable = false)
