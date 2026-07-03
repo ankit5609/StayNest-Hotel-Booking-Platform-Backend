@@ -70,7 +70,7 @@ public class ImageUploadServiceImpl implements ImageUploadService {
                 java.nio.file.Path filePath = uploadDir.toPath().resolve(newFilename);
                 java.nio.file.Files.write(filePath, file.getBytes());
 
-                return "http://localhost:8080/uploads/" + newFilename;
+                return "http://localhost:8080/api/v1/uploads/" + newFilename;
             } catch (IOException e) {
                 log.error("Local file upload failed", e);
                 throw new RuntimeException("Failed to save file locally: " + e.getMessage());
