@@ -55,7 +55,11 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     public UserDto getMyProfile() {
         User user = getCurrentUser();
         log.info("Getting the profile for user with id: {}", user.getId());
-        return modelMapper.map(user, UserDto.class);
+        UserDto dto = modelMapper.map(user, UserDto.class);
+        if (dto.getAvatarUrl() != null && dto.getAvatarUrl().contains("localhost:8080/uploads/")) {
+            dto.setAvatarUrl(dto.getAvatarUrl().replace("localhost:8080/uploads/", "localhost:8080/api/v1/uploads/"));
+        }
+        return dto;
     }
 
     @Override
