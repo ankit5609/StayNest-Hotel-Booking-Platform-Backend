@@ -6,6 +6,7 @@ import com.cybernode.projects.HotelBookingApp.security.JWTService;
 import com.cybernode.projects.HotelBookingApp.service.BookingService;
 import com.cybernode.projects.HotelBookingApp.service.GuestService;
 import com.cybernode.projects.HotelBookingApp.service.UserService;
+import com.cybernode.projects.HotelBookingApp.service.ReviewService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +49,9 @@ public class UserControllerTest {
     private GuestService guestService;
 
     @MockitoBean
+    private ReviewService reviewService;
+
+    @MockitoBean
     private JWTService jwtService;
 
     @Test
@@ -85,6 +89,59 @@ public class UserControllerTest {
         when(bookingService.getMyBookings(any())).thenReturn(Page.empty());
 
         mockMvc.perform(get("/users/myBookings"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser
+    public void testUploadProfilePhoto_Success() throws Exception {
+        org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile(
+                "file", "avatar.jpg", MediaType.IMAGE_JPEG_VALUE, "image-content".getBytes());
+
+        when(userService.uploadProfilePhoto(any())).thenReturn("http://cloudinary.com/avatar.jpg");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/users/profile/photo")
+                        .file(file)
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("http://cloudinary.com/avatar.jpg"));
+    }
+
+    @Test
+    @WithMockUser
+    public void testGetMyReviews_Success() throws Exception {
+        when(reviewService.getMyReviews(any())).thenReturn(Page.empty());
+
+        mockMvc.perform(get("/users/myReviews"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser
+    public void testAddHotelToWishlist_Success() throws Exception {
+        doNothing().when(userService).addHotelToWishlist(1L);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/users/wishlist/1")
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithMockUser
+    public void testRemoveHotelFromWishlist_Success() throws Exception {
+        doNothing().when(userService).removeHotelFromWishlist(1L);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/users/wishlist/1")
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithMockUser
+    public void testGetWishlist_Success() throws Exception {
+        when(userService.getWishlist(any())).thenReturn(Page.empty());
+
+        mockMvc.perform(get("/users/wishlist"))
                 .andExpect(status().isOk());
     }
 }

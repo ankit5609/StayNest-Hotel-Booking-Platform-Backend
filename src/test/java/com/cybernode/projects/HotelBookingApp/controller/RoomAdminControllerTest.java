@@ -81,4 +81,19 @@ public class RoomAdminControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].id").value(50L));
     }
+
+    @Test
+    @WithMockUser(roles = "HOTEL_MANAGER")
+    public void testUploadRoomPhoto_Success() throws Exception {
+        org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile(
+                "file", "room.jpg", MediaType.IMAGE_JPEG_VALUE, "image-content".getBytes());
+
+        when(roomService.uploadRoomPhoto(eq(50L), any())).thenReturn("http://cloudinary.com/room.jpg");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/admin/hotels/10/rooms/50/photos")
+                        .file(file)
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value("http://cloudinary.com/room.jpg"));
+    }
 }

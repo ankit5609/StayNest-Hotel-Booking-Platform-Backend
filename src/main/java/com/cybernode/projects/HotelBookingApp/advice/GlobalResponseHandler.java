@@ -30,6 +30,14 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
             return body;
         }
 
+        if (body instanceof String) {
+            try {
+                return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(new ApiResponse<>(body));
+            } catch (Exception e) {
+                return "{\"data\":\"" + body + "\"}";
+            }
+        }
+
         return new ApiResponse<>(body);
     }
 }

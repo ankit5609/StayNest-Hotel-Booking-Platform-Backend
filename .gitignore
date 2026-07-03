@@ -47,3 +47,6 @@ PRODUCT.md
 
 # Generated API docs
 openapi.json
+
+# Frontend
+frontend/

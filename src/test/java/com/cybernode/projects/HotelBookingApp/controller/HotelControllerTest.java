@@ -109,4 +109,14 @@ public class HotelControllerTest {
                         .with(csrf()))
                 .andExpect(status().isNoContent());
     }
+
+    @Test
+    @WithMockUser(roles = "HOTEL_MANAGER")
+    public void testSettleRefund_Success() throws Exception {
+        doNothing().when(bookingService).settleRefund(100L);
+
+        mockMvc.perform(post("/admin/hotels/bookings/100/refund")
+                        .with(csrf()))
+                .andExpect(status().isNoContent());
+    }
 }
