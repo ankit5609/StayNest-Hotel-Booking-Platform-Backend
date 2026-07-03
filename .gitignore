@@ -50,3 +50,6 @@ openapi.json
 
 # Frontend
 frontend/
+
+# Local uploads fallback
+uploads/
