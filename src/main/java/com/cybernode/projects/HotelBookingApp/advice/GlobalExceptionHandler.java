@@ -92,9 +92,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiResponse<?>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        String message = ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage();
+        String displayMessage = "Unable to complete database operation due to a data constraint conflict. Please verify your inputs.";
+        if (message != null && message.toLowerCase().contains("review")) {
+            displayMessage = "This booking has already been reviewed";
+        }
         ApiError apiError = ApiError.builder()
                 .status(HttpStatus.CONFLICT)
-                .message("This booking has already been reviewed")
+                .message(displayMessage)
                 .build();
         return buildErrorResponseEntity(apiError);
     }

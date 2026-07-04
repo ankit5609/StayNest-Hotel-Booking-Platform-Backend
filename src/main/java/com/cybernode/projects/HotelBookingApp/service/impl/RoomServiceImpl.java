@@ -10,6 +10,7 @@ import com.cybernode.projects.HotelBookingApp.repository.HotelRepository;
 import com.cybernode.projects.HotelBookingApp.repository.RoomRepository;
 import com.cybernode.projects.HotelBookingApp.service.InventoryService;
 import com.cybernode.projects.HotelBookingApp.service.ImageUploadService;
+import com.cybernode.projects.HotelBookingApp.service.PricingUpdateService;
 import com.cybernode.projects.HotelBookingApp.service.RoomService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ public class RoomServiceImpl implements RoomService{
     private final InventoryService inventoryService;
     private final ModelMapper modelMapper;
     private final ImageUploadService imageUploadService;
+    private final PricingUpdateService pricingUpdateService;
 
     @Override
     public RoomDto createNewRoom(Long hotelId, RoomDto roomDto) {
@@ -52,6 +54,7 @@ public class RoomServiceImpl implements RoomService{
 
         if (hotel.getActive()) {
             inventoryService.initializeRoomForAYear(room);
+            pricingUpdateService.updateHotelPrices(hotel);
         }
 
         return modelMapper.map(room, RoomDto.class);

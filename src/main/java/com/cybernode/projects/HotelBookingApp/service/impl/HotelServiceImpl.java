@@ -13,6 +13,7 @@ import com.cybernode.projects.HotelBookingApp.repository.RoomRepository;
 import com.cybernode.projects.HotelBookingApp.service.HotelService;
 import com.cybernode.projects.HotelBookingApp.service.ImageUploadService;
 import com.cybernode.projects.HotelBookingApp.service.InventoryService;
+import com.cybernode.projects.HotelBookingApp.service.PricingUpdateService;
 import org.springframework.web.multipart.MultipartFile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,7 @@ public class HotelServiceImpl implements HotelService{
     private final RoomRepository roomRepository;
     private final InventoryRepository inventoryRepository;
     private final ImageUploadService imageUploadService;
+    private final PricingUpdateService pricingUpdateService;
 
     @Override
     public HotelDto createNewHotel(HotelDto hotelDto) {
@@ -127,6 +129,8 @@ public class HotelServiceImpl implements HotelService{
         for(Room room: hotel.getRooms()) {
             inventoryService.initializeRoomForAYear(room);
         }
+
+        pricingUpdateService.updateHotelPrices(hotel);
     }
 
     //    public method
