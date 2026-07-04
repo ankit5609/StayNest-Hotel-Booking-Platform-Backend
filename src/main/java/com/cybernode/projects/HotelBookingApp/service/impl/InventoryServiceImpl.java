@@ -26,7 +26,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,7 +46,15 @@ public class InventoryServiceImpl implements InventoryService{
     public void initializeRoomForAYear(Room room) {
         LocalDate today = LocalDate.now();
         LocalDate endDate = today.plusYears(1);
-        for (; !today.isAfter(endDate); today=today.plusDays(1)) {
+
+        List<LocalDate> existingDates = inventoryRepository.findExistingDatesByRoomIdAndDateRange(room.getId(), today, endDate);
+        Set<LocalDate> existingDatesSet = new HashSet<>(existingDates);
+
+        List<Inventory> newInventories = new ArrayList<>();
+        for (; !today.isAfter(endDate); today = today.plusDays(1)) {
+            if (existingDatesSet.contains(today)) {
+                continue;
+            }
             Inventory inventory = Inventory.builder()
                     .hotel(room.getHotel())
                     .room(room)
@@ -56,7 +67,10 @@ public class InventoryServiceImpl implements InventoryService{
                     .totalCount(room.getTotalCount())
                     .closed(false)
                     .build();
-            inventoryRepository.save(inventory);
+            newInventories.add(inventory);
+        }
+        if (!newInventories.isEmpty()) {
+            inventoryRepository.saveAll(newInventories);
         }
     }
 

@@ -213,4 +213,11 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
                                   @Param("startDate") LocalDate startDate,
                                   @Param("endDate") LocalDate endDate,
                                   @Param("numberOfRooms") int numberOfRooms);
+
+    @Query("SELECT i.date FROM Inventory i WHERE i.room.id = :roomId AND i.date BETWEEN :startDate AND :endDate")
+    List<LocalDate> findExistingDatesByRoomIdAndDateRange(
+            @Param("roomId") Long roomId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
 }
