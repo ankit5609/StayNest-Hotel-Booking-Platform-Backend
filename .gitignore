@@ -33,7 +33,6 @@ build/
 .vscode/
 
 # Application Config
-src/main/resources/application.properties
 .env
 brain.md
 

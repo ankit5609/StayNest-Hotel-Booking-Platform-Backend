@@ -30,6 +30,9 @@ public class ImageUploadServiceImpl implements ImageUploadService {
     @Value("${cloudinary.api-secret:}")
     private String apiSecret;
 
+    @Value("${app.backend.base-url:http://localhost:8080/api/v1}")
+    private String backendBaseUrl;
+
     private static final List<String> ALLOWED_CONTENT_TYPES = List.of("image/jpeg", "image/png", "image/webp");
     private static final long MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
@@ -70,7 +73,7 @@ public class ImageUploadServiceImpl implements ImageUploadService {
                 java.nio.file.Path filePath = uploadDir.toPath().resolve(newFilename);
                 java.nio.file.Files.write(filePath, file.getBytes());
 
-                return "http://localhost:8080/api/v1/uploads/" + newFilename;
+                return backendBaseUrl.replaceAll("/$", "") + "/uploads/" + newFilename;
             } catch (IOException e) {
                 log.error("Local file upload failed", e);
                 throw new RuntimeException("Failed to save file locally: " + e.getMessage());
