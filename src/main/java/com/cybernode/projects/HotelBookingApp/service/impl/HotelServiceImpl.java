@@ -212,7 +212,7 @@ public class HotelServiceImpl implements HotelService{
         if (city == null || city.trim().isEmpty()) {
             hotelsPage = hotelRepository.findByActiveTrue(clamped);
         } else {
-            hotelsPage = hotelRepository.findByActiveTrueAndCityIgnoreCase(city.trim(), clamped);
+            hotelsPage = hotelRepository.findByActiveTrueAndCityContainingIgnoreCase(city.trim(), clamped);
         }
         return hotelsPage.map(hotel -> modelMapper.map(hotel, HotelDto.class));
     }

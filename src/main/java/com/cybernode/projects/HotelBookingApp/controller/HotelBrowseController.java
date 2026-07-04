@@ -77,7 +77,7 @@ public class HotelBrowseController {
     @Operation(summary = "Search hotels using natural language", tags = {"Browse Hotels"})
     public ResponseEntity<NaturalLanguageSearchResponseDto> searchHotelsNaturalLanguage(
             @Valid @RequestBody NaturalLanguageSearchRequestDto request) {
-        return ResponseEntity.ok(conversationalSearchService.search(request.getQuery()));
+        return ResponseEntity.ok(conversationalSearchService.search(request));
     }
 
     @GetMapping

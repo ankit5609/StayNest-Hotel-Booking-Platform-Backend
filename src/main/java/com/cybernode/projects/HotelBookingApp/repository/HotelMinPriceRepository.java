@@ -19,7 +19,7 @@ public interface HotelMinPriceRepository extends JpaRepository<HotelMinPrice, Lo
     @Query("""
             SELECT new com.cybernode.projects.HotelBookingApp.dto.HotelPriceDto(i.hotel, AVG(i.price))
             FROM HotelMinPrice i
-            WHERE i.hotel.city = :city
+            WHERE LOWER(i.hotel.city) LIKE LOWER(CONCAT('%', :city, '%'))
                 AND i.date BETWEEN :startDate AND :endDate
                 AND i.hotel.active = true
                 AND (:minRating IS NULL OR i.hotel.averageRating >= :minRating)
@@ -40,7 +40,7 @@ public interface HotelMinPriceRepository extends JpaRepository<HotelMinPrice, Lo
     @Query("""
             SELECT new com.cybernode.projects.HotelBookingApp.dto.HotelPriceDto(i.hotel, AVG(i.price))
             FROM HotelMinPrice i
-            WHERE i.hotel.city = :city
+            WHERE LOWER(i.hotel.city) LIKE LOWER(CONCAT('%', :city, '%'))
                 AND i.date BETWEEN :startDate AND :endDate
                 AND i.hotel.active = true
                 AND (:minRating IS NULL OR i.hotel.averageRating >= :minRating)
@@ -62,7 +62,7 @@ public interface HotelMinPriceRepository extends JpaRepository<HotelMinPrice, Lo
     @Query("""
             SELECT new com.cybernode.projects.HotelBookingApp.dto.HotelPriceDto(i.hotel, AVG(i.price))
             FROM HotelMinPrice i
-            WHERE i.hotel.city = :city
+            WHERE LOWER(i.hotel.city) LIKE LOWER(CONCAT('%', :city, '%'))
                 AND i.date BETWEEN :startDate AND :endDate
                 AND i.hotel.active = true
                 AND (:minRating IS NULL OR i.hotel.averageRating >= :minRating)

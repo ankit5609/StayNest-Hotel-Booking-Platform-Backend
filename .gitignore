@@ -53,3 +53,7 @@ frontend/
 
 # Local uploads fallback
 uploads/
+
+# OS files
+.DS_Store
+**/.DS_Store

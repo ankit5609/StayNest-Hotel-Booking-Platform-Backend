@@ -1,6 +1,7 @@
 package com.cybernode.projects.HotelBookingApp.service;
 
 import com.cybernode.projects.HotelBookingApp.dto.HotelSearchRequest;
+import com.cybernode.projects.HotelBookingApp.dto.NaturalLanguageSearchRequestDto;
 import com.cybernode.projects.HotelBookingApp.dto.NaturalLanguageSearchResponseDto;
 import com.cybernode.projects.HotelBookingApp.enums.SortOption;
 import lombok.RequiredArgsConstructor;
@@ -51,8 +52,11 @@ public class ConversationalSearchService {
             """.formatted(LocalDate.now());
     }
 
-    public NaturalLanguageSearchResponseDto search(String query) {
+    public NaturalLanguageSearchResponseDto search(NaturalLanguageSearchRequestDto request) {
+        String query = request.getQuery();
+        log.info("ConversationalSearchService: search query received: '{}'", query);
         if (!enabled) {
+            log.warn("ConversationalSearchService: search is disabled!");
             return NaturalLanguageSearchResponseDto.builder()
                     .missingFields(List.of("feature_disabled"))
                     .build();
@@ -60,16 +64,52 @@ public class ConversationalSearchService {
 
         HotelSearchRequest parsed;
         try {
+            log.info("ConversationalSearchService: Sending request to OpenRouter/Spring AI...");
             parsed = chatClient.prompt()
                     .system(systemPrompt())
                     .user(query)
                     .call()
                     .entity(HotelSearchRequest.class);
+            log.info("ConversationalSearchService: Received response from AI: {}", parsed);
         } catch (Exception e) {
-            log.warn("Conversational search parse failed for query '{}': {}", query, e.getMessage());
+            log.warn("ConversationalSearchService: search parse failed for query '{}': {}", query, e.getMessage(), e);
             return NaturalLanguageSearchResponseDto.builder()
                     .missingFields(REQUIRED_FIELDS)
                     .build();
+        }
+
+        // Merge logic: If LLM returned null/empty for a field, fallback to the existing search context sent by the frontend
+        if (parsed.getCity() == null || parsed.getCity().isBlank()) {
+            parsed.setCity(request.getCity());
+        }
+        if (parsed.getStartDate() == null) {
+            parsed.setStartDate(request.getStartDate());
+        }
+        if (parsed.getEndDate() == null) {
+            parsed.setEndDate(request.getEndDate());
+        }
+        if (parsed.getRoomsCount() == null) {
+            parsed.setRoomsCount(request.getRoomsCount());
+        }
+        if (parsed.getMinPrice() == null) {
+            parsed.setMinPrice(request.getMinPrice());
+        }
+        if (parsed.getMaxPrice() == null) {
+            parsed.setMaxPrice(request.getMaxPrice());
+        }
+        if (parsed.getMinRating() == null) {
+            parsed.setMinRating(request.getMinRating());
+        }
+        if (parsed.getSortBy() == null || parsed.getSortBy() == SortOption.PRICE_ASC) {
+            if (request.getSortBy() != null) {
+                parsed.setSortBy(request.getSortBy());
+            }
+        }
+        if (parsed.getPage() == null) {
+            parsed.setPage(0);
+        }
+        if (parsed.getSize() == null) {
+            parsed.setSize(10);
         }
 
         List<String> missing = new ArrayList<>();
