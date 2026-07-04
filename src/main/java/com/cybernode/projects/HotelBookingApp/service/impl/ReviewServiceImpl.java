@@ -49,8 +49,8 @@ public class ReviewServiceImpl implements ReviewService {
             throw new UnAuthorisedException("You can only review your own bookings");
         }
 
-        if (booking.getBookingStatus() != BookingStatus.CONFIRMED) {
-            throw new IllegalStateException("Only confirmed bookings can be reviewed");
+        if (booking.getBookingStatus() != BookingStatus.CONFIRMED && booking.getBookingStatus() != BookingStatus.COMPLETED) {
+            throw new IllegalStateException("Only confirmed or completed bookings can be reviewed");
         }
 
         if (!booking.getCheckOutDate().isBefore(LocalDate.now())) {

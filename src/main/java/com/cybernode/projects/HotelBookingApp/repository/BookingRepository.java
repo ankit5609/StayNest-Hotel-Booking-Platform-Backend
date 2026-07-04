@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -30,9 +31,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByBookingStatus(BookingStatus bookingStatus);
 
-    // Counts recent confirmed bookings for a hotel within a lookback window.
-    // Used to compute booking velocity signal for AI pricing (called once per
-    // hotel before iterating its inventory rows, not once per row).
-    long countByHotelAndBookingStatusAndCreatedAtAfter(Hotel hotel, BookingStatus status, LocalDateTime after);
+    // Counts recent bookings for a hotel within a lookback window for AI pricing.
+    long countByHotelAndBookingStatusInAndCreatedAtAfter(Hotel hotel, List<BookingStatus> statuses, LocalDateTime after);
+
+    // Finds bookings that checked out before the specified date with a given status
+    List<Booking> findByBookingStatusAndCheckOutDateBefore(BookingStatus status, LocalDate date);
 }
 

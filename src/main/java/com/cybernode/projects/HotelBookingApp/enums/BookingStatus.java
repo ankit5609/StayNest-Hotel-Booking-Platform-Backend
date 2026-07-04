@@ -23,5 +23,8 @@ public enum BookingStatus {
     EXPIRED,
 
     // Refund is pending Stripe response
-    REFUND_PENDING
+    REFUND_PENDING,
+
+    // The checkout date has passed and the stay is completed
+    COMPLETED
 }

@@ -197,9 +197,9 @@ public class BookingServiceImpl implements BookingService{
         Booking booking = bookingRepository.findByPaymentSessionId(session.getId()).orElseThrow(() ->
                 new ResourceNotFoundException("Booking not found for session ID: " + session.getId()));
 
-        // Idempotency: if booking is already confirmed, ignore duplicate webhook events
-        if (booking.getBookingStatus() == BookingStatus.CONFIRMED) {
-            log.info("Booking {} already confirmed, ignoring duplicate webhook event", booking.getId());
+        // Idempotency: if booking is already confirmed or completed, ignore duplicate webhook events
+        if (booking.getBookingStatus() == BookingStatus.CONFIRMED || booking.getBookingStatus() == BookingStatus.COMPLETED) {
+            log.info("Booking {} already confirmed or completed, ignoring duplicate webhook event", booking.getId());
             return;
         }
 
@@ -406,11 +406,11 @@ public class BookingServiceImpl implements BookingService{
 
         Long totalConfirmedBookings = bookings
                 .stream()
-                .filter(booking -> booking.getBookingStatus() == BookingStatus.CONFIRMED)
+                .filter(booking -> booking.getBookingStatus() == BookingStatus.CONFIRMED || booking.getBookingStatus() == BookingStatus.COMPLETED)
                 .count();
 
         BigDecimal totalRevenueOfConfirmedBookings = bookings.stream()
-                .filter(booking -> booking.getBookingStatus() == BookingStatus.CONFIRMED)
+                .filter(booking -> booking.getBookingStatus() == BookingStatus.CONFIRMED || booking.getBookingStatus() == BookingStatus.COMPLETED)
                 .map(Booking::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -455,6 +455,21 @@ public class BookingServiceImpl implements BookingService{
             booking.setBookingStatus(BookingStatus.EXPIRED);
             bookingRepository.save(booking);
             notificationService.sendBookingExpired(booking);
+        }
+    }
+
+    // Scheduled sweep running every hour to mark past checked-out stays as COMPLETED
+    @Scheduled(cron = "0 0 * * * *")
+    @Transactional
+    public void autoCompleteBookings() {
+        log.info("Running scheduled check-out sweep to auto-complete past bookings");
+        List<Booking> pastBookings = bookingRepository.findByBookingStatusAndCheckOutDateBefore(
+                BookingStatus.CONFIRMED, LocalDate.now());
+
+        for (Booking booking : pastBookings) {
+            log.info("Auto-completing booking with ID: {} (checked out on {})", booking.getId(), booking.getCheckOutDate());
+            booking.setBookingStatus(BookingStatus.COMPLETED);
+            bookingRepository.save(booking);
         }
     }
 

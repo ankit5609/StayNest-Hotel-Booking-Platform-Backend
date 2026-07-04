@@ -71,8 +71,8 @@ public class PricingUpdateService {
 
         // Compute booking velocity once for this hotel -- the same answer for every
         // inventory row, so doing it inside the per-row loop would be an N+1 query.
-        long velocity = bookingRepository.countByHotelAndBookingStatusAndCreatedAtAfter(
-                hotel, BookingStatus.CONFIRMED, LocalDateTime.now().minusDays(velocityLookbackDays));
+        long velocity = bookingRepository.countByHotelAndBookingStatusInAndCreatedAtAfter(
+                hotel, List.of(BookingStatus.CONFIRMED, BookingStatus.COMPLETED), LocalDateTime.now().minusDays(velocityLookbackDays));
 
         updateInventoryPrices(inventoryList, velocity);
 
