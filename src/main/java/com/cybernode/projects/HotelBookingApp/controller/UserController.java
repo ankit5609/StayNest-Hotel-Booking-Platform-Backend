@@ -5,6 +5,7 @@ import com.cybernode.projects.HotelBookingApp.dto.GuestDto;
 import com.cybernode.projects.HotelBookingApp.dto.ProfileUpdateRequestDto;
 import com.cybernode.projects.HotelBookingApp.dto.UserDto;
 import com.cybernode.projects.HotelBookingApp.dto.HotelDto;
+import com.cybernode.projects.HotelBookingApp.dto.HotelPriceResponseDto;
 import com.cybernode.projects.HotelBookingApp.dto.ReviewDto;
 import com.cybernode.projects.HotelBookingApp.service.BookingService;
 import com.cybernode.projects.HotelBookingApp.service.GuestService;
@@ -114,7 +115,7 @@ public class UserController {
 
     @GetMapping("/wishlist")
     @Operation(summary = "Get my bookmarked hotels", tags = {"Profile"})
-    public ResponseEntity<Page<HotelDto>> getWishlist(
+    public ResponseEntity<Page<HotelPriceResponseDto>> getWishlist(
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(userService.getWishlist(pageable));
     }

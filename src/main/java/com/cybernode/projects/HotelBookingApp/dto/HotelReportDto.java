@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 public class HotelReportDto {
-    private Long bookingCount;
-    private BigDecimal totalRevenue;
+    private Long totalConfirmedBookings;
+    private BigDecimal totalRevenueOfConfirmedBookings;
     private BigDecimal avgRevenue;
 }

@@ -25,7 +25,7 @@ public class CheckoutServiceImpl implements CheckoutService {
 
     @Override
     public String getCheckoutSession(Booking booking, String successUrl, String failureUrl) {
-        log.info("Creating session for booking with ID: {}", booking.getId());
+        log.info("Creating session for booking with ID: {}, successUrl: {}", booking.getId(), successUrl);
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         try {

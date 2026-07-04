@@ -16,12 +16,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import com.cybernode.projects.HotelBookingApp.dto.HotelDto;
+import com.cybernode.projects.HotelBookingApp.dto.HotelPriceResponseDto;
 import com.cybernode.projects.HotelBookingApp.entity.Hotel;
+import com.cybernode.projects.HotelBookingApp.entity.Room;
 import com.cybernode.projects.HotelBookingApp.repository.HotelRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.math.BigDecimal;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -113,10 +117,20 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
-    public Page<HotelDto> getWishlist(Pageable pageable) {
+    public Page<HotelPriceResponseDto> getWishlist(Pageable pageable) {
         log.info("Fetching wishlist for current user");
         User user = getCurrentUser();
         Page<Hotel> hotels = hotelRepository.findWishlistByUserId(user.getId(), pageable);
-        return hotels.map(hotel -> modelMapper.map(hotel, HotelDto.class));
+        return hotels.map(hotel -> {
+            HotelPriceResponseDto dto = modelMapper.map(hotel, HotelPriceResponseDto.class);
+            Double minPrice = hotel.getRooms().stream()
+                    .map(Room::getBasePrice)
+                    .filter(Objects::nonNull)
+                    .mapToDouble(BigDecimal::doubleValue)
+                    .min()
+                    .orElse(0.0);
+            dto.setPrice(minPrice);
+            return dto;
+        });
     }
 }

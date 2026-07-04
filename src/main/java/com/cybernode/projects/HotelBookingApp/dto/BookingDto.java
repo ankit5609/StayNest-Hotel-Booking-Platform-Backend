@@ -20,4 +20,6 @@ public class BookingDto {
     private Set<GuestDto> guests;
     private BigDecimal amount;
     private BigDecimal refundAmount;
+    private HotelDto hotel;
+    private RoomDto room;
 }

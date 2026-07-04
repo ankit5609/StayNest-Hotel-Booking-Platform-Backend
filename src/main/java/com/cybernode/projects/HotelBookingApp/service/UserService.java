@@ -1,9 +1,12 @@
 package com.cybernode.projects.HotelBookingApp.service;
 
-
 import com.cybernode.projects.HotelBookingApp.dto.ProfileUpdateRequestDto;
 import com.cybernode.projects.HotelBookingApp.dto.UserDto;
+import com.cybernode.projects.HotelBookingApp.dto.HotelPriceResponseDto;
 import com.cybernode.projects.HotelBookingApp.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface UserService {
 
@@ -13,11 +16,11 @@ public interface UserService {
 
     UserDto getMyProfile();
 
-    String uploadProfilePhoto(org.springframework.web.multipart.MultipartFile file);
+    String uploadProfilePhoto(MultipartFile file);
 
     void addHotelToWishlist(Long hotelId);
 
     void removeHotelFromWishlist(Long hotelId);
 
-    org.springframework.data.domain.Page<com.cybernode.projects.HotelBookingApp.dto.HotelDto> getWishlist(org.springframework.data.domain.Pageable pageable);
+    Page<HotelPriceResponseDto> getWishlist(Pageable pageable);
 }
