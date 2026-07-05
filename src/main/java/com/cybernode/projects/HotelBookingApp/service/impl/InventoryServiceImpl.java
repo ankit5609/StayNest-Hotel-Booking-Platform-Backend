@@ -86,6 +86,11 @@ public class InventoryServiceImpl implements InventoryService{
     public Page<HotelPriceResponseDto> searchHotels(HotelSearchRequest req) {
         log.info("Searching hotels for {} city, from {} to {}, sortBy={}", req.getCity(), req.getStartDate(), req.getEndDate(), req.getSortBy());
 
+        String searchCity = req.getCity();
+        if (searchCity != null && searchCity.contains(",")) {
+            searchCity = searchCity.split(",")[0].trim();
+        }
+
         int pageSize = Math.min(req.getSize(), MAX_SEARCH_PAGE_SIZE);
         SortOption sortBy = req.getSortBy() != null ? req.getSortBy() : SortOption.PRICE_ASC;
 
@@ -95,17 +100,17 @@ public class InventoryServiceImpl implements InventoryService{
             Pageable pageable = PageRequest.of(req.getPage(), pageSize,
                     Sort.by(Sort.Direction.DESC, "hotel.averageRating"));
             hotelPage = hotelMinPriceRepository.findHotels(
-                    req.getCity(), req.getStartDate(), req.getEndDate(),
+                    searchCity, req.getStartDate(), req.getEndDate(),
                     req.getMinRating(), req.getMinPrice(), req.getMaxPrice(), pageable);
         } else if (sortBy == SortOption.PRICE_DESC) {
             Pageable pageable = PageRequest.of(req.getPage(), pageSize);
             hotelPage = hotelMinPriceRepository.findHotelsOrderByPriceDesc(
-                    req.getCity(), req.getStartDate(), req.getEndDate(),
+                    searchCity, req.getStartDate(), req.getEndDate(),
                     req.getMinRating(), req.getMinPrice(), req.getMaxPrice(), pageable);
         } else {
             Pageable pageable = PageRequest.of(req.getPage(), pageSize);
             hotelPage = hotelMinPriceRepository.findHotelsOrderByPriceAsc(
-                    req.getCity(), req.getStartDate(), req.getEndDate(),
+                    searchCity, req.getStartDate(), req.getEndDate(),
                     req.getMinRating(), req.getMinPrice(), req.getMaxPrice(), pageable);
         }
 
