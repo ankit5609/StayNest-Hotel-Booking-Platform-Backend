@@ -313,6 +313,10 @@ public class BookingServiceImpl implements BookingService{
             throw new IllegalStateException("Only confirmed bookings can be cancelled");
         }
 
+        if (LocalDate.now().isAfter(booking.getCheckInDate()) || LocalDate.now().isEqual(booking.getCheckInDate())) {
+            throw new IllegalStateException("Bookings cannot be cancelled on or after the check-in date");
+        }
+
         BigDecimal refundAmount = calculateRefundAmount(booking);
 
         booking.setBookingStatus(BookingStatus.REFUND_PENDING);
