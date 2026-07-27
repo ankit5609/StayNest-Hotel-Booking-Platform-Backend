@@ -222,6 +222,11 @@ public class HotelServiceImpl implements HotelService{
             HotelDto dto = modelMapper.map(hotel, HotelDto.class);
             dto.setPhotos(hotel.getPhotos());
             dto.setAmenities(hotel.getAmenities());
+            if (hotel.getRooms() != null && !hotel.getRooms().isEmpty()) {
+                dto.setPrice(hotel.getRooms().get(0).getBasePrice().doubleValue());
+            } else {
+                dto.setPrice(3500.0);
+            }
             return dto;
         });
     }

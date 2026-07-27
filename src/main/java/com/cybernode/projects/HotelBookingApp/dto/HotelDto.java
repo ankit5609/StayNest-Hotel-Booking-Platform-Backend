@@ -35,4 +35,5 @@ public class HotelDto {
 
     private Double averageRating;
     private Long reviewCount;
+    private Double price;
 }
