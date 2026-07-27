@@ -90,18 +90,19 @@ public class BookingServiceImpl implements BookingService{
         Room room = roomRepository.findById(bookingRequest.getRoomId()).orElseThrow(() ->
                 new ResourceNotFoundException("Room not found with id: "+bookingRequest.getRoomId()));
 
+        long nightsCount = ChronoUnit.DAYS.between(bookingRequest.getCheckInDate(), bookingRequest.getCheckOutDate());
+        LocalDate stayEndDate = bookingRequest.getCheckOutDate().minusDays(1);
+
         List<Inventory> inventoryList = inventoryRepository.findAndLockAvailableInventory(room.getId(),
-                bookingRequest.getCheckInDate(), bookingRequest.getCheckOutDate(), bookingRequest.getRoomsCount());
+                bookingRequest.getCheckInDate(), stayEndDate, bookingRequest.getRoomsCount());
 
-        long daysCount = ChronoUnit.DAYS.between(bookingRequest.getCheckInDate(), bookingRequest.getCheckOutDate())+1;
-
-        if (inventoryList.size() != daysCount) {
-            throw new IllegalStateException("Room is not available anymore");
+        if (inventoryList.size() != nightsCount) {
+            throw new IllegalStateException("Room is not available for all selected dates");
         }
 
         // Reserve the room/ update the booked count of inventories
         inventoryRepository.initBooking(room.getId(), bookingRequest.getCheckInDate(),
-                bookingRequest.getCheckOutDate(), bookingRequest.getRoomsCount());
+                stayEndDate, bookingRequest.getRoomsCount());
 
         BigDecimal priceForOneRoom = pricingService.calculateTotalPrice(inventoryList);
         BigDecimal totalPrice = priceForOneRoom.multiply(BigDecimal.valueOf(bookingRequest.getRoomsCount()));

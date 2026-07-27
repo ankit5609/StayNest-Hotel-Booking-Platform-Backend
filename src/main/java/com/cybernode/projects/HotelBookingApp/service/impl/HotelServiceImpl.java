@@ -140,11 +140,12 @@ public class HotelServiceImpl implements HotelService{
                 .findById(hotelId)
                 .orElseThrow(() -> new ResourceNotFoundException("Hotel not found with ID: "+hotelId));
 
-        long daysCount = ChronoUnit.DAYS.between(hotelInfoRequestDto.getStartDate(), hotelInfoRequestDto.getEndDate())+1;
+        long nightsCount = ChronoUnit.DAYS.between(hotelInfoRequestDto.getStartDate(), hotelInfoRequestDto.getEndDate());
+        LocalDate stayEndDate = hotelInfoRequestDto.getEndDate().minusDays(1);
 
         List<RoomPriceDto> roomPriceDtoList = inventoryRepository.findRoomAveragePrice(hotelId,
-                hotelInfoRequestDto.getStartDate(), hotelInfoRequestDto.getEndDate(),
-                hotelInfoRequestDto.getRoomsCount(), daysCount);
+                hotelInfoRequestDto.getStartDate(), stayEndDate,
+                hotelInfoRequestDto.getRoomsCount(), nightsCount);
 
         List<RoomPriceResponseDto> rooms = roomPriceDtoList.stream()
                 .map(roomPriceDto -> {
