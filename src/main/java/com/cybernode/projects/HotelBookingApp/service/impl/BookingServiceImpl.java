@@ -207,11 +207,12 @@ public class BookingServiceImpl implements BookingService{
         booking.setBookingStatus(BookingStatus.CONFIRMED);
         bookingRepository.save(booking);
 
+        LocalDate stayEndDate = booking.getCheckOutDate().minusDays(1);
         // Lock inventory and shift room count from reserved to booked
         inventoryRepository.getInventoryAndLockBeforeUpdate(booking.getRoom().getId(), booking.getCheckInDate(),
-                booking.getCheckOutDate());
+                stayEndDate);
         inventoryRepository.confirmBooking(booking.getRoom().getId(), booking.getCheckInDate(),
-                booking.getCheckOutDate(), booking.getRoomsCount());
+                stayEndDate, booking.getRoomsCount());
 
         log.info("Successfully confirmed the booking for Booking ID: {}", booking.getId());
         notificationService.sendBookingConfirmation(booking);
@@ -234,10 +235,11 @@ public class BookingServiceImpl implements BookingService{
                 return;
             }
 
+            LocalDate stayEndDate = booking.getCheckOutDate().minusDays(1);
             inventoryRepository.getInventoryAndLockBeforeUpdate(booking.getRoom().getId(), booking.getCheckInDate(),
-                    booking.getCheckOutDate());
+                    stayEndDate);
             inventoryRepository.releaseReservedInventory(booking.getRoom().getId(), booking.getCheckInDate(),
-                    booking.getCheckOutDate(), booking.getRoomsCount());
+                    stayEndDate, booking.getRoomsCount());
 
             booking.setBookingStatus(BookingStatus.EXPIRED);
             bookingRepository.save(booking);
@@ -270,16 +272,37 @@ public class BookingServiceImpl implements BookingService{
                 return;
             }
 
+            LocalDate stayEndDate = booking.getCheckOutDate().minusDays(1);
             inventoryRepository.getInventoryAndLockBeforeUpdate(booking.getRoom().getId(), booking.getCheckInDate(),
-                    booking.getCheckOutDate());
+                    stayEndDate);
             inventoryRepository.releaseReservedInventory(booking.getRoom().getId(), booking.getCheckInDate(),
-                    booking.getCheckOutDate(), booking.getRoomsCount());
+                    stayEndDate, booking.getRoomsCount());
 
             booking.setBookingStatus(BookingStatus.PAYMENT_FAILED);
             bookingRepository.save(booking);
             log.info("Booking {} marked as PAYMENT_FAILED, inventory released", booking.getId());
             notificationService.sendPaymentFailed(booking);
         });
+    }
+
+    @Scheduled(cron = "0 */5 * * * *")
+    @Transactional
+    public void releaseExpiredReservations() {
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(15);
+        List<Booking> expiredBookings = bookingRepository.findByBookingStatusInAndCreatedAtBefore(
+                List.of(BookingStatus.RESERVED, BookingStatus.GUESTS_ADDED, BookingStatus.PAYMENTS_PENDING), cutoff);
+        for (Booking booking : expiredBookings) {
+            try {
+                LocalDate stayEndDate = booking.getCheckOutDate().minusDays(1);
+                inventoryRepository.getInventoryAndLockBeforeUpdate(booking.getRoom().getId(), booking.getCheckInDate(), stayEndDate);
+                inventoryRepository.releaseReservedInventory(booking.getRoom().getId(), booking.getCheckInDate(), stayEndDate, booking.getRoomsCount());
+                booking.setBookingStatus(BookingStatus.EXPIRED);
+                bookingRepository.save(booking);
+                log.info("Auto-released inventory for expired booking ID {}", booking.getId());
+            } catch (Exception e) {
+                log.warn("Failed to auto-release booking {}: {}", booking.getId(), e.getMessage());
+            }
+        }
     }
 
     private BigDecimal calculateRefundAmount(Booking booking) {
@@ -541,9 +564,10 @@ public class BookingServiceImpl implements BookingService{
             booking.setBookingStatus(BookingStatus.CONFIRMED);
             bookingRepository.save(booking);
 
+            LocalDate stayEndDate = booking.getCheckOutDate().minusDays(1);
             try {
-                inventoryRepository.getInventoryAndLockBeforeUpdate(booking.getRoom().getId(), booking.getCheckInDate(), booking.getCheckOutDate());
-                inventoryRepository.confirmBooking(booking.getRoom().getId(), booking.getCheckInDate(), booking.getCheckOutDate(), booking.getRoomsCount());
+                inventoryRepository.getInventoryAndLockBeforeUpdate(booking.getRoom().getId(), booking.getCheckInDate(), stayEndDate);
+                inventoryRepository.confirmBooking(booking.getRoom().getId(), booking.getCheckInDate(), stayEndDate, booking.getRoomsCount());
             } catch (Exception e) {
                 log.warn("Inventory already updated for booking {}", booking.getId());
             }
