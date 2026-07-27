@@ -1,828 +1,730 @@
 <div align="center">
 
-# 🏨 StayNest Backend
+# 🏨 StayNest — Backend API
 
-### *Production-Grade Hotel Booking Platform — Built with Spring Boot & Java 21*
+### *Robust, scalable Spring Boot REST API for the StayNest hotel booking platform*
 
-[![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.15-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org/)
-[![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://stripe.com/)
-[![Cloudinary](https://img.shields.io/badge/Cloudinary-Media-3448C5?style=for-the-badge&logo=cloudinary&logoColor=white)](https://cloudinary.com/)
-[![License](https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge)](LICENSE)
-
-<br/>
-
-> **StayNest** is a feature-rich, production-ready hotel booking backend powering guest bookings, hotel management, dynamic AI-driven pricing, transactional payments with Stripe, media storage with Cloudinary, and retrieval-augmented review Q&A — all from a single cohesive Spring Boot application.
-
-[🚀 Live API](#-api-reference) · [⚡ Quick Start](#-quick-start) · [🏗 Architecture](#-system-architecture) · [🤖 AI Features](#-ai--llm-features)
+[![Live API](https://img.shields.io/badge/🌐_Live_API-Render-4ade80?style=for-the-badge)](https://hotel-booking-app-0swn.onrender.com/api/v1)
+[![Swagger UI](https://img.shields.io/badge/📄_Swagger_UI-Online-orange?style=for-the-badge)](https://hotel-booking-app-0swn.onrender.com/swagger-ui.html)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.5-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Java](https://img.shields.io/badge/Java_21-ED8B00?style=for-the-badge&logo=java&logoColor=white)](https://openjdk.org/projects/jdk/21/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL_16-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
 </div>
 
 ---
 
-## 📋 Table of Contents
+## 📖 Table of Contents
 
-- [✨ Feature Highlights](#-feature-highlights)
-- [🏗 System Architecture](#-system-architecture)
-- [🗃 Database Schema](#-database-schema)
-- [💰 Dynamic Pricing Engine](#-dynamic-pricing-engine)
-- [📦 Tech Stack](#-tech-stack)
-- [⚡ Quick Start](#-quick-start)
-- [🔧 Environment Variables](#-environment-variables)
-- [📡 API Reference](#-api-reference)
-- [🔄 Booking Lifecycle](#-booking-lifecycle)
-- [🤖 AI & LLM Features](#-ai--llm-features)
-- [🛡 Security Model](#-security-model)
-- [🚨 Error Handling](#-error-handling)
-- [📦 Project Structure](#-project-structure)
-- [🧪 Testing](#-testing)
-- [⚠️ Known Limitations](#️-known-limitations)
-
----
-
-## ✨ Feature Highlights
-
-| Feature | Description |
-|---|---|
-| 🔐 **JWT Auth** | Stateless, HTTP-only cookie based authentication with role-based access control |
-| 💳 **Stripe Payments** | Full checkout session creation, webhook reconciliation & automated refunds |
-| 📈 **Dynamic Pricing** | Decorator-pattern pricing engine with occupancy, urgency, surge, holiday, and AI multipliers |
-| 🤖 **AI Pricing (opt-in)** | OpenRouter/Gemini driven rate adjustments clamped to `[0.8x – 1.3x]` |
-| 💬 **NL Search (opt-in)** | Converts free-text guest queries to structured hotel searches via LLM extraction |
-| 📝 **RAG Review Q&A (opt-in)** | pgvector-backed similarity search over hotel reviews, answered by an LLM |
-| 🔒 **Pessimistic Locking** | Database-level write locks prevent double bookings under concurrent load |
-| ⏱ **Stale Booking Sweep** | Scheduler runs every 5 min to expire abandoned `PAYMENT_PENDING` reservations |
-| 📧 **Transactional Email** | SMTP/Brevo integration for booking confirmations, password resets & refund notices |
-| ☁️ **Cloudinary Media** | Hotels can upload photos stored on Cloudinary CDN with secure URLs |
-| 📊 **Paginated APIs** | All list endpoints paginated with size-clamping (max 100) and configurable sort |
+- [Overview](#-overview)
+- [Architecture](#-architecture)
+- [Tech Stack](#-tech-stack)
+- [Project Structure](#-project-structure)
+- [Domain Model](#-domain-model)
+- [API Reference](#-api-reference)
+- [Security Model](#-security-model)
+- [AI Integration](#-ai-integration)
+- [Payments Integration](#-payments-integration)
+- [Getting Started](#-getting-started)
+- [Environment Variables](#-environment-variables)
+- [Docker](#-docker)
+- [Database](#-database)
+- [Scheduled Jobs](#-scheduled-jobs)
+- [Error Handling](#-error-handling)
+- [Contributing](#-contributing)
 
 ---
 
-## 🏗 System Architecture
+## 🌟 Overview
 
-```mermaid
-graph TB
-    subgraph Client["🖥 Client Layer"]
-        FE["React Frontend\nstaynest.arclite.site"]
-        PM["Postman / API Client"]
-    end
+The **StayNest Backend** is a production-grade REST API built with **Spring Boot 3.5** and **Java 21**. It powers the full lifecycle of a hotel booking platform — from hotel discovery and room inventory management to secure Stripe payments, AI-powered hotel Q&A, and automated refund processing.
 
-    subgraph Gateway["🔒 Security Layer"]
-        JWTFilter["JWTAuthFilter\nHTTP-Only Cookie Validation"]
-        CORS["CORS Filter\nOrigin Whitelisting"]
-    end
+```
+Guest Flow:
+  Register/Login → Search Hotels → View Rooms → Init Booking → Pay → Confirm
 
-    subgraph Controllers["🎮 Controller Layer"]
-        AuthCtrl["AuthController\n/auth"]
-        HotelCtrl["HotelController\n/hotels"]
-        AdminCtrl["AdminHotelController\n/admin/hotels"]
-        BookingCtrl["HotelBookingController\n/bookings"]
-        ReviewCtrl["ReviewController\n/reviews"]
-        WebhookCtrl["WebhookController\n/webhook/payment"]
-        UserCtrl["UserController\n/users"]
-    end
+Manager Flow:
+  Create Hotel → Add Rooms → Set Inventory → Go Live → Track Bookings → Process Refunds
 
-    subgraph Services["⚙️ Service Layer"]
-        AuthSvc["AuthService"]
-        InventorySvc["InventoryService"]
-        BookingSvc["BookingService"]
-        PricingSvc["PricingService\n+ Decorator Chain"]
-        ReviewSvc["ReviewService"]
-        NotifSvc["NotificationService"]
-        EmbedSvc["ReviewEmbeddingService"]
-        QaSvc["HotelQaService"]
-        NLSvc["NLSearchService"]
-    end
-
-    subgraph ExternalServices["🌐 External Integrations"]
-        Stripe["💳 Stripe\nCheckout + Webhooks + Refunds"]
-        Cloudinary["☁️ Cloudinary\nImage CDN"]
-        Brevo["📧 Brevo SMTP\nTransactional Mail"]
-        OpenRouter["🤖 OpenRouter\nGemini / Chat LLM"]
-        OpenAI["🧠 OpenAI\ntext-embedding-3-small"]
-    end
-
-    subgraph Data["🗃 Data Layer"]
-        PostgreSQL["🐘 PostgreSQL 16\n+ pgvector extension"]
-        VectorStore["📐 vector_store\nReview Embeddings"]
-    end
-
-    Client --> Gateway
-    Gateway --> Controllers
-    Controllers --> Services
-    Services --> Stripe
-    Services --> Cloudinary
-    Services --> Brevo
-    Services --> OpenRouter
-    EmbedSvc --> OpenAI
-    Services --> PostgreSQL
-    EmbedSvc --> VectorStore
-    VectorStore --> PostgreSQL
+AI Flow:
+  User Question → OpenAI Embeddings → pgvector Similarity Search → GPT Answer
 ```
 
 ---
 
-## 🗃 Database Schema
+## 🏗 Architecture
 
-```mermaid
-erDiagram
-    APP_USER {
-        Long id PK
-        String name
-        String email
-        String password
-        String avatarUrl
-        LocalDate dateOfBirth
-        Gender gender
-        String passwordResetToken
-        Integer tokenVersion
-    }
-
-    USER_ROLES {
-        Long userId FK
-        String roles
-    }
-
-    HOTEL {
-        Long id PK
-        String name
-        String city
-        String address
-        String description
-        String contactEmail
-        String contactPhone
-        Double averageRating
-        Integer reviewCount
-        Boolean active
-        String[] photos
-        Long ownerId FK
-    }
-
-    ROOM {
-        Long id PK
-        String type
-        Integer capacity
-        BigDecimal basePrice
-        Long hotelId FK
-    }
-
-    INVENTORY {
-        Long id PK
-        LocalDate date
-        Integer totalCount
-        Integer bookedCount
-        Integer reservedCount
-        Double surgeFactor
-        BigDecimal price
-        Long roomId FK
-    }
-
-    BOOKING {
-        Long id PK
-        LocalDate checkInDate
-        LocalDate checkOutDate
-        Integer roomsCount
-        BigDecimal amount
-        BigDecimal refundAmount
-        BookingStatus bookingStatus
-        String paymentSessionId
-        Long userId FK
-        Long hotelId FK
-        Long roomId FK
-        LocalDateTime createdAt
-    }
-
-    GUEST {
-        Long id PK
-        String name
-        String email
-        String phone
-        Long userId FK
-    }
-
-    REVIEW {
-        Long id PK
-        Integer rating
-        String comment
-        Long userId FK
-        Long hotelId FK
-        Long bookingId FK
-    }
-
-    APP_USER ||--o{ USER_ROLES : "has roles"
-    APP_USER ||--o{ HOTEL : "manages (HOTEL_MANAGER)"
-    APP_USER ||--o{ BOOKING : "creates"
-    APP_USER ||--o{ GUEST : "has saved guests"
-    APP_USER ||--o{ REVIEW : "writes"
-    HOTEL ||--o{ ROOM : "has"
-    HOTEL ||--o{ BOOKING : "receives"
-    HOTEL ||--o{ REVIEW : "receives"
-    ROOM ||--o{ INVENTORY : "has inventory per date"
-    ROOM ||--o{ BOOKING : "booked via"
-    BOOKING }o--o{ GUEST : "has guests"
-    BOOKING ||--o| REVIEW : "verified by"
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        StayNest Frontend                        │
+│            React 19 + Vite  (staynest.arclite.site)             │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │  HTTPS / REST
+                               ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                     Spring Boot API (Java 21)                   │
+│                                                                  │
+│  ┌──────────────┐  ┌──────────────┐  ┌────────────────────────┐│
+│  │  Controllers │→│   Services   │→│      Repositories      ││
+│  │  (REST layer)│  │ (Business    │  │  (Spring Data JPA)     ││
+│  │              │  │  Logic)      │  │                        ││
+│  └──────────────┘  └──────┬───────┘  └──────────┬─────────────┘│
+│                           │                      │              │
+│  ┌──────────────┐         │         ┌────────────▼─────────────┐│
+│  │ Spring       │         │         │   Neon Postgres + pgvec  ││
+│  │ Security +   │         │         │   (Cloud-hosted DB)      ││
+│  │ JWT Filter   │         │         └──────────────────────────┘│
+│  └──────────────┘         │                                     │
+│                    ┌──────▼───────┐                             │
+│                    │   External   │                             │
+│                    │   Services:  │                             │
+│                    │  • Stripe    │                             │
+│                    │  • OpenAI    │                             │
+│                    │  • Cloudinary│                             │
+│                    │  • Gmail SMTP│                             │
+│                    └──────────────┘                             │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
----
+### Layer Responsibilities
 
-## 💰 Dynamic Pricing Engine
-
-The pricing engine uses the **Decorator Pattern** to layer multipliers on top of a base room price. Each decorator wraps the next and contributes its own multiplier to the final computed daily rate.
-
-```mermaid
-flowchart LR
-    A["📦 Base Price\n₹ room.basePrice"] --> B
-
-    subgraph B["Surge Pricing\n× inventory.surgeFactor"]
-    end
-
-    B --> C
-    subgraph C["Occupancy Markup\n× 1.2 if occupancy > 80%"]
-    end
-
-    C --> D
-    subgraph D["Urgency Markup\n× 1.15 if check-in ≤ 7 days"]
-    end
-
-    D --> E
-    subgraph E["Holiday Markup\n× 1.25 during holidays"]
-    end
-
-    E --> F
-
-    subgraph F["AI Adjustment (opt-in)\n× 0.8–1.3 via OpenRouter/Gemini\nFallback: × 1.0 on any failure"]
-    end
-
-    F --> G["💰 Final Daily Rate"]
-
-    style A fill:#1e40af,color:#fff
-    style G fill:#15803d,color:#fff
-```
-
-**Pricing Decorator Chain (Code):**
-```java
-pricingStrategy = new SurgePricingStrategy(
-                  new OccupancyPricingStrategy(
-                  new UrgencyPricingStrategy(
-                  new HolidayPricingStrategy(
-                  new BasePricingStrategy()))));
-
-// When AI enabled (outermost decorator):
-pricingStrategy = new AiDynamicPricingStrategy(pricingStrategy, aiPricingService, velocity);
-```
-
----
-
-## 📦 Tech Stack
-
-| Category | Technology | Version |
+| Layer | Package | Responsibility |
 |---|---|---|
-| Language | Java (OpenJDK) | 21 |
-| Framework | Spring Boot | 3.5.15 |
-| Security | Spring Security + JWT (JJWT) | 6.5.x / 0.12.6 |
-| Database | PostgreSQL | 16+ |
-| ORM | Hibernate / Spring Data JPA | 6.6.x |
-| Build | Maven Wrapper | 3.x |
-| Payments | Stripe Java SDK | 32.1.0 |
-| Media | Cloudinary Java SDK | 2.4.0 |
-| Email | Jakarta Mail (Angus Mail) | 2.0.5 |
-| AI / LLM | Spring AI (OpenAI Adapter) | 1.1.8 |
-| Vector DB | pgvector (Spring AI PGVector) | pg16 |
-| Mapping | ModelMapper | 3.2.6 |
-| API Docs | SpringDoc OpenAPI / Swagger UI | 2.8.3 |
-| Validation | Hibernate Validator | 8.0.x |
+| **Controller** | `controller/` | HTTP request mapping, request validation, response shaping |
+| **Service** | `service/` | Business logic, transaction orchestration |
+| **Repository** | `repository/` | Spring Data JPA queries, pgvector similarity search |
+| **Entity** | `entity/` | JPA-mapped database tables |
+| **DTO** | `dto/` | Request/response data transfer objects with Bean Validation |
+| **Security** | `security/` | JWT filter, UserDetails service, security configuration |
+| **Config** | `config/` | Spring beans: ModelMapper, Cloudinary, Stripe, CORS |
+| **Advice** | `advice/` | Global exception handler (`@ControllerAdvice`) |
 
 ---
 
-## ⚡ Quick Start
+## 🛠 Tech Stack
 
-### Prerequisites
+### Core
 
-- **JDK 21+** installed
-- **Docker** (for local PostgreSQL + pgvector)
-- A **Brevo** account for SMTP (or Mailtrap for testing)
-- A **Stripe** test account
+| Technology | Version | Purpose |
+|---|---|---|
+| [Java](https://openjdk.org/projects/jdk/21/) | 21 | Language (LTS) |
+| [Spring Boot](https://spring.io/projects/spring-boot) | 3.5.15 | Application framework |
+| [Spring Data JPA](https://spring.io/projects/spring-data-jpa) | — | ORM + repository layer |
+| [Spring Security](https://spring.io/projects/spring-security) | — | Authentication & authorisation |
+| [Spring Validation](https://beanvalidation.org) | — | Request body validation |
+| [PostgreSQL](https://www.postgresql.org/) | 16 | Primary relational database |
+| [pgvector](https://github.com/pgvector/pgvector) | — | Vector similarity search for AI |
 
-### 1. Clone the Repository
+### Integrations
 
-```bash
-git clone https://github.com/ankit5609/StayNest-Hotel-Booking-Platform-Backend.git
-cd StayNest-Hotel-Booking-Platform-Backend
+| Library | Version | Purpose |
+|---|---|---|
+| [JJWT](https://github.com/jwtk/jjwt) | 0.12.6 | JWT creation & validation |
+| [Stripe Java SDK](https://github.com/stripe/stripe-java) | 32.1.0 | Payment sessions & webhooks |
+| [Spring AI (OpenAI)](https://spring.io/projects/spring-ai) | 1.1.8 | Hotel Q&A + vector embeddings |
+| [Spring AI (pgvector)](https://spring.io/projects/spring-ai) | 1.1.8 | Vector store for RAG |
+| [Cloudinary](https://cloudinary.com) | 2.4.0 | Hotel & room photo uploads |
+| [Spring Mail](https://spring.io/guides/gs/sending-email/) | — | Gmail SMTP for OTP emails |
+| [SpringDoc OpenAPI](https://springdoc.org) | 2.8.3 | Swagger UI & OpenAPI spec |
+| [ModelMapper](https://modelmapper.org) | 3.2.6 | Entity ↔ DTO mapping |
+| [Lombok](https://projectlombok.org) | — | Boilerplate reduction |
+
+### Infrastructure
+
+| Tool | Purpose |
+|---|---|
+| [Neon Postgres](https://neon.tech) | Serverless Postgres (production) |
+| [Render](https://render.com) | Backend hosting (production) |
+| [Docker](https://www.docker.com) | Containerisation for deployment |
+| [Maven](https://maven.apache.org) | Build tool & dependency management |
+
+---
+
+## 📁 Project Structure
+
 ```
-
-### 2. Start the Database
-
-Start PostgreSQL with the `pgvector` extension via Docker:
-
-```bash
-docker compose up -d
-```
-
-This boots `pgvector/pgvector:pg16` on `localhost:5432` and creates the required database with the `vector` extension.
-
-### 3. Configure Environment
-
-Create a `.env` file at the project root:
-
-```env
-# ──────────────────────────────
-# Core Application
-# ──────────────────────────────
-JWT_SECRET_KEY=your_super_secret_jwt_signing_key_min_32_chars
-CORS_ALLOWED_ORIGINS=http://localhost:5173,https://staynest.arclite.site
-FRONTEND_URL=https://staynest.arclite.site
-
-# ──────────────────────────────
-# Database (Local Docker)
-# ──────────────────────────────
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/neondb?sslmode=disable
-SPRING_DATASOURCE_USERNAME=postgres
-SPRING_DATASOURCE_PASSWORD=postgres
-
-# ──────────────────────────────
-# Stripe
-# ──────────────────────────────
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-
-# ──────────────────────────────
-# Cloudinary
-# ──────────────────────────────
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-
-# ──────────────────────────────
-# Transactional Mail (Brevo SMTP)
-# ──────────────────────────────
-MAIL_HOST=smtp-relay.brevo.com
-MAIL_PORT=587
-MAIL_USERNAME=your_brevo_smtp_username
-MAIL_PASSWORD=your_brevo_smtp_password
-MAIL_FROM=noreply@yourdomain.com
-
-# ──────────────────────────────
-# AI Features (all opt-in, default: off)
-# ──────────────────────────────
-OPENROUTER_API_KEY=sk-or-v1-...
-AI_PRICING_ENABLED=false
-AI_PRICING_MODEL=google/gemini-2.0-flash
-OPENAI_API_KEY=sk-proj-...       # Only needed when REVIEW_QA_ENABLED=true
-REVIEW_QA_ENABLED=false
-NL_SEARCH_ENABLED=false
-```
-
-### 4. Build & Run
-
-```bash
-# Run directly (loads .env automatically via dotenv)
-./mvnw spring-boot:run
-
-# Or build and run the fat JAR
-./mvnw clean package -DskipTests
-java -jar target/HotelBookingApp-*.jar
-```
-
-The API is now live at `http://localhost:8080/api/v1` and Swagger UI at:
-```
-http://localhost:8080/api/v1/swagger-ui.html
+HotelBookingApp/
+├── src/
+│   ├── main/
+│   │   ├── java/com/cybernode/projects/HotelBookingApp/
+│   │   │   ├── HotelBookingAppApplication.java     # Spring Boot entry point
+│   │   │   │
+│   │   │   ├── controller/                         # REST controllers
+│   │   │   │   ├── AuthController.java             # /auth/login, register, forgot-password
+│   │   │   │   ├── HotelBrowseController.java      # /hotels search, details, AI Q&A
+│   │   │   │   ├── HotelBookingController.java     # /bookings CRUD
+│   │   │   │   ├── HotelController.java            # /admin/hotels CRUD (manager)
+│   │   │   │   ├── RoomAdminController.java        # /admin/hotels/{id}/rooms CRUD
+│   │   │   │   ├── InventoryController.java        # /admin/inventory management
+│   │   │   │   ├── ReviewController.java           # /hotels/{id}/reviews
+│   │   │   │   ├── UserController.java             # /users profile, wishlist, guests
+│   │   │   │   ├── WebhookController.java          # /webhooks/stripe (Stripe events)
+│   │   │   │   └── HealthController.java           # /health ping endpoint
+│   │   │   │
+│   │   │   ├── service/
+│   │   │   │   ├── impl/
+│   │   │   │   │   ├── HotelServiceImpl.java       # Hotel search & management logic
+│   │   │   │   │   ├── BookingServiceImpl.java     # Booking lifecycle + inventory mgmt
+│   │   │   │   │   ├── RoomServiceImpl.java        # Room CRUD
+│   │   │   │   │   ├── InventoryServiceImpl.java   # Inventory date management
+│   │   │   │   │   ├── UserServiceImpl.java        # User profile, wishlist, guests
+│   │   │   │   │   └── ReviewServiceImpl.java      # Review CRUD
+│   │   │   │   ├── PricingUpdateService.java       # Hotel min-price cache updates
+│   │   │   │   └── HotelService.java (interface)   # + other service interfaces
+│   │   │   │
+│   │   │   ├── entity/
+│   │   │   │   ├── User.java          # App user (GUEST / MANAGER / ADMIN roles)
+│   │   │   │   ├── Hotel.java         # Hotel listing with photos[], amenities[]
+│   │   │   │   ├── HotelContactInfo.java  # Embedded contact details
+│   │   │   │   ├── Room.java          # Room type with price, photos[], amenities[]
+│   │   │   │   ├── Inventory.java     # Per-date room availability counts
+│   │   │   │   ├── HotelMinPrice.java # Cached minimum nightly price per hotel
+│   │   │   │   ├── Booking.java       # Booking with status, guests, payment session
+│   │   │   │   ├── Guest.java         # Travelling companion profile
+│   │   │   │   └── Review.java        # Hotel review with rating
+│   │   │   │
+│   │   │   ├── dto/                   # Request & response DTOs with @Valid annotations
+│   │   │   │
+│   │   │   ├── repository/
+│   │   │   │   ├── HotelRepository.java
+│   │   │   │   ├── HotelMinPriceRepository.java   # Min-price cache queries
+│   │   │   │   ├── BookingRepository.java
+│   │   │   │   ├── InventoryRepository.java
+│   │   │   │   ├── RoomRepository.java
+│   │   │   │   ├── UserRepository.java
+│   │   │   │   ├── GuestRepository.java
+│   │   │   │   └── ReviewRepository.java
+│   │   │   │
+│   │   │   ├── security/
+│   │   │   │   ├── SecurityConfig.java         # CORS, route protection, filter chain
+│   │   │   │   ├── JwtAuthFilter.java          # JWT extraction & validation per request
+│   │   │   │   ├── JwtService.java             # Token generation & claims parsing
+│   │   │   │   └── CustomUserDetailsService.java
+│   │   │   │
+│   │   │   ├── config/
+│   │   │   │   ├── AppConfig.java              # ModelMapper, PasswordEncoder beans
+│   │   │   │   ├── CloudinaryConfig.java       # Cloudinary SDK configuration
+│   │   │   │   └── OpenApiConfig.java          # Swagger/OpenAPI metadata
+│   │   │   │
+│   │   │   ├── advice/
+│   │   │   │   └── GlobalExceptionHandler.java # Maps all exceptions → ApiResponse
+│   │   │   │
+│   │   │   ├── enums/
+│   │   │   │   └── BookingStatus.java          # RESERVED, CONFIRMED, CANCELLED, REFUNDED
+│   │   │   │
+│   │   │   ├── exception/                      # Custom exception classes
+│   │   │   └── strategy/                       # Refund calculation strategies
+│   │   │
+│   │   └── resources/
+│   │       └── application.properties          # Spring configuration
+│   │
+│   └── test/                                   # Unit & integration tests
+│
+├── Dockerfile                                  # Multi-stage Docker build
+├── docker-compose.yml                          # Local Postgres + pgvector setup
+├── pom.xml                                     # Maven dependencies
+└── openapi.json                                # Generated OpenAPI 3.0 spec
 ```
 
 ---
 
-## 🔧 Environment Variables
+## 🗃 Domain Model
 
-<details>
-<summary><strong>🔐 Core & Security</strong></summary>
+```
+User ─────────────────┐
+  │ (GUEST/MANAGER/   │
+  │  ADMIN)           │
+  │                   │
+  ├─── owns ──────→ Hotel ──────→ Room ──────→ Inventory
+  │                    │            │         (date, count)
+  │                    │            │
+  ├─── books ──────→ Booking ←─────┘
+  │                    │
+  │                    ├─── has ───→ Guest (many-to-many)
+  │                    │
+  │                    └─── status: RESERVED → CONFIRMED → CANCELLED/REFUNDED
+  │
+  ├─── reviews ────→ Review (hotel + rating)
+  └─── wishlist ───→ Hotel[]
+```
 
-| Variable | Default | Required | Description |
-|---|---|---|---|
-| `JWT_SECRET_KEY` | — | ✅ | HS256 JWT signing secret (min 32 chars) |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:3000` | ✅ | Comma-separated allowed origins |
-| `FRONTEND_URL` | `https://staynest.arclite.site` | ✅ | Used in email links and Stripe redirects |
-| `SERVER_SERVLET_CONTEXT_PATH` | `/api/v1` | ❌ | API base context path |
-| `BACKEND_BASE_URL` | `http://localhost:8080/api/v1` | ❌ | Self-referential URL used in email asset links |
+### Entity Summary
 
-</details>
+| Entity | Key Fields |
+|---|---|
+| `User` | email, password (hashed), roles[], name, wishlist[] |
+| `Hotel` | name, city, photos[], amenities[], contactInfo, active, owner |
+| `Room` | type, price, totalCount, photos[], amenities[], hotel |
+| `Inventory` | date, reservedCount, bookedCount, roomId |
+| `Booking` | hotel, room, user, checkInDate, checkOutDate, roomsCount, amount, bookingStatus, paymentSessionId |
+| `Guest` | name, email, phone — linked to bookings via join table |
+| `HotelMinPrice` | hotelId, minPrice — pre-computed cache for search filtering |
+| `Review` | hotel, user, rating, comment |
 
-<details>
-<summary><strong>💳 Stripe</strong></summary>
+### Booking Status Lifecycle
 
-| Variable | Default | Required | Description |
-|---|---|---|---|
-| `STRIPE_SECRET_KEY` | — | ✅ | Stripe API secret key |
-| `STRIPE_WEBHOOK_SECRET` | — | ✅ | Webhook signing secret for event verification |
-
-</details>
-
-<details>
-<summary><strong>☁️ Cloudinary</strong></summary>
-
-| Variable | Default | Required | Description |
-|---|---|---|---|
-| `CLOUDINARY_CLOUD_NAME` | — | ✅ | Cloudinary account cloud name |
-| `CLOUDINARY_API_KEY` | — | ✅ | Cloudinary API key |
-| `CLOUDINARY_API_SECRET` | — | ✅ | Cloudinary API secret |
-
-</details>
-
-<details>
-<summary><strong>📧 Email (SMTP / Brevo)</strong></summary>
-
-| Variable | Default | Required | Description |
-|---|---|---|---|
-| `MAIL_HOST` | `smtp.mailtrap.io` | ✅ | SMTP server hostname |
-| `MAIL_PORT` | `2525` | ✅ | SMTP port (587 for Brevo) |
-| `MAIL_USERNAME` | — | ✅ | SMTP username |
-| `MAIL_PASSWORD` | — | ✅ | SMTP password |
-| `MAIL_FROM` | `noreply@staynest.com` | ✅ | Sender email address |
-
-</details>
-
-<details>
-<summary><strong>🤖 AI / LLM (all opt-in)</strong></summary>
-
-| Variable | Default | Required | Description |
-|---|---|---|---|
-| `OPENROUTER_API_KEY` | — | When AI enabled | Chat completions key for OpenRouter |
-| `OPENROUTER_BASE_URL` | `https://openrouter.ai/api/v1` | ❌ | OpenRouter base URL |
-| `AI_PRICING_ENABLED` | `false` | ❌ | Enable AI dynamic pricing strategy |
-| `AI_PRICING_MODEL` | `google/gemini-2.0-flash` | ❌ | OpenRouter model for pricing |
-| `OPENAI_API_KEY` | — | When QA enabled | OpenAI key for embeddings only |
-| `REVIEW_QA_ENABLED` | `false` | ❌ | Enable review-based RAG Q&A |
-| `NL_SEARCH_ENABLED` | `false` | ❌ | Enable natural language hotel search |
-
-</details>
+```
+                    ┌─────────┐
+                    │  INIT   │  ← initBooking()
+                    └────┬────┘
+         15min timeout   │  makePayment()
+         auto-release ←──┤
+                    ┌────▼────┐
+                    │RESERVED │  ← Stripe session created, inventory held
+                    └────┬────┘
+             Stripe      │  verifyPayment() / Stripe webhook
+             success  ───┤
+                    ┌────▼────┐
+                    │CONFIRMED│  ← Inventory permanently booked
+                    └────┬────┘
+                         │
+              ┌──────────┴────────────┐
+         cancelBooking()         Refund approved
+              │                       │
+         ┌────▼────┐            ┌─────▼──────┐
+         │CANCELLED│            │  REFUNDED  │
+         └─────────┘            └────────────┘
+```
 
 ---
 
 ## 📡 API Reference
 
-### 🔐 Authentication
+Interactive API documentation is available at **[Swagger UI](https://hotel-booking-app-0swn.onrender.com/swagger-ui.html)**.
 
-| Method | Endpoint | Auth | Description |
+### Authentication — `/api/v1/auth`
+
+| Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| `POST` | `/auth/signup` | Public | Register as guest or hotel manager |
-| `POST` | `/auth/login` | Public | Login and receive JWT via HttpOnly cookie |
-| `POST` | `/auth/logout` | Authenticated | Invalidate session token |
-| `POST` | `/auth/refresh` | Public | Refresh access token |
-| `POST` | `/auth/forgot-password` | Public | Send password reset email |
-| `POST` | `/auth/reset-password` | Public | Reset password via token |
+| `POST` | `/auth/signup` | Register new account | None |
+| `POST` | `/auth/login` | Login, receive JWT | None |
+| `POST` | `/auth/logout` | Logout | JWT |
+| `POST` | `/auth/forgot-password` | Send OTP to email | None |
+| `POST` | `/auth/reset-password` | Reset via OTP token | None |
+| `POST` | `/auth/change-password` | Change password | JWT |
 
-### 🏨 Hotels (Guest Browsing)
+### Hotel Discovery — `/api/v1/hotels`
 
-| Method | Endpoint | Auth | Description |
+| Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| `GET` | `/hotels/search` | Public | Search hotels with filters & pagination |
-| `POST` | `/hotels/search/nl` | Public | Natural language hotel search (opt-in) |
-| `GET` | `/hotels/{hotelId}/info` | Public | Get hotel pricing details |
+| `GET` | `/hotels` | Search hotels (city, dates, rooms, price, amenities) | None |
+| `GET` | `/hotels/{hotelId}/info` | Hotel details + rooms | None |
+| `GET` | `/hotels/{hotelId}/reviews` | Paginated hotel reviews | None |
+| `POST` | `/hotels/{hotelId}/ask` | AI-powered hotel Q&A | None |
 
-**Search Query Params:**
-```
-?city=Bali&startDate=2025-08-01&endDate=2025-08-05
-&roomsCount=1&minPrice=500&maxPrice=5000
-&minRating=4.0&sortBy=PRICE_ASC&page=0&size=20
-```
+### Bookings — `/api/v1/bookings`
 
-### 🛠 Admin Operations
-
-| Method | Endpoint | Auth | Description |
+| Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| `POST` | `/admin/hotels/` | `HOTEL_MANAGER` | Create a new hotel |
-| `GET` | `/admin/hotels/` | `HOTEL_MANAGER` | List owned hotels (paginated) |
-| `PUT` | `/admin/hotels/{hotelId}` | `HOTEL_MANAGER` | Update hotel details |
-| `PATCH` | `/admin/hotels/{hotelId}/activate` | `HOTEL_MANAGER` | Activate hotel & seed inventories |
-| `GET` | `/admin/hotels/{hotelId}/bookings` | `HOTEL_MANAGER` | List all bookings for a hotel |
-| `POST` | `/admin/hotels/{hotelId}/photos` | `HOTEL_MANAGER` | Upload hotel photo to Cloudinary |
-| `GET` | `/admin/hotels/bookings/refund-pending` | `HOTEL_MANAGER` | List all `REFUND_PENDING` bookings |
+| `POST` | `/bookings/init` | Create booking, hold inventory | JWT |
+| `POST` | `/bookings/{id}/addGuests` | Attach guest profiles | JWT |
+| `POST` | `/bookings/{id}/payments` | Create Stripe Checkout session | JWT |
+| `POST` | `/bookings/{id}/verify-payment` | Poll & confirm payment status | JWT |
+| `GET` | `/bookings/{id}` | Get booking details | JWT |
+| `GET` | `/bookings/{id}/status` | Get booking status | JWT |
+| `POST` | `/bookings/{id}/cancel` | Cancel booking | JWT |
+| `GET` | `/bookings` | Get all user bookings | JWT |
 
-### 🎫 Booking Flow
+### Manager Hotel CRUD — `/api/v1/admin/hotels`
 
-| Method | Endpoint | Auth | Description |
+| Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| `POST` | `/bookings/initiate` | `GUEST` | Reserve dates (creates PENDING booking) |
-| `POST` | `/bookings/{bookingId}/guests` | `GUEST` | Add guest passengers to booking |
-| `POST` | `/bookings/{bookingId}/payments` | `GUEST` | Get Stripe Checkout session URL |
-| `POST` | `/bookings/{bookingId}/cancel` | `GUEST` | Cancel booking & trigger refund |
+| `POST` | `/admin/hotels` | Create new hotel | Manager |
+| `PUT` | `/admin/hotels/{id}` | Update hotel profile | Manager |
+| `DELETE` | `/admin/hotels/{id}` | Delete hotel | Manager |
+| `PATCH` | `/admin/hotels/{id}/activate` | Toggle hotel live/draft | Manager |
+| `POST` | `/admin/hotels/{id}/photos` | Upload hotel photo to Cloudinary | Manager |
+| `GET` | `/admin/hotels` | Get all hotels owned by manager | Manager |
+| `GET` | `/admin/hotels/{id}` | Get specific hotel | Manager |
+| `GET` | `/admin/hotels/{id}/bookings` | Get bookings for hotel | Manager |
+| `POST` | `/admin/hotels/bookings/{id}/refund` | Process refund | Manager |
+| `GET` | `/admin/hotels/{id}/reports` | Revenue & occupancy report | Manager |
 
-### 👤 User Profile
+### Manager Room CRUD — `/api/v1/admin/hotels/{hotelId}/rooms`
 
-| Method | Endpoint | Auth | Description |
+| Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| `GET` | `/users/myBookings` | Authenticated | Get current user's bookings |
-| `GET` | `/users/guests` | Authenticated | Get saved guest profiles |
+| `POST` | `/admin/hotels/{id}/rooms` | Create room type | Manager |
+| `GET` | `/admin/hotels/{id}/rooms` | Get all rooms | Manager |
+| `PUT` | `/admin/hotels/{id}/rooms/{roomId}` | Update room | Manager |
+| `DELETE` | `/admin/hotels/{id}/rooms/{roomId}` | Delete room | Manager |
+| `POST` | `/admin/hotels/{id}/rooms/{roomId}/photos` | Upload room photo | Manager |
 
-### ⭐ Reviews
+### Inventory — `/api/v1/admin/inventory`
 
-| Method | Endpoint | Auth | Description |
+| Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| `POST` | `/reviews` | Authenticated | Submit verified stay review |
-| `GET` | `/hotels/{hotelId}/reviews` | Public | Get hotel reviews (paginated) |
-| `PUT` | `/reviews/{reviewId}` | Authenticated | Update own review |
-| `DELETE` | `/reviews/{reviewId}` | Authenticated | Delete own review |
-| `GET` | `/hotels/{hotelId}/ask` | Public | Ask a question about the hotel (RAG, opt-in) |
+| `GET` | `/admin/inventory/rooms/{roomId}` | Get inventory calendar | Manager |
+| `PATCH` | `/admin/inventory/rooms/{roomId}` | Update inventory counts | Manager |
 
-### 🔗 Webhooks
+### User — `/api/v1/users`
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/users/profile` | Get user profile | JWT |
+| `PUT` | `/users/profile` | Update profile | JWT |
+| `POST` | `/users/wishlist/{hotelId}` | Add to wishlist | JWT |
+| `DELETE` | `/users/wishlist/{hotelId}` | Remove from wishlist | JWT |
+| `GET` | `/users/wishlist` | Get wishlist | JWT |
+| `GET` | `/users/guests` | Get guest profiles | JWT |
+| `POST` | `/users/guests` | Create guest profile | JWT |
+| `PUT` | `/users/guests/{id}` | Update guest | JWT |
+| `DELETE` | `/users/guests/{id}` | Delete guest | JWT |
+
+### Reviews — `/api/v1/hotels/{hotelId}/reviews`
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/hotels/{id}/reviews` | List reviews | None |
+| `POST` | `/hotels/{id}/reviews` | Post review | JWT |
+| `DELETE` | `/reviews/{id}` | Delete review | JWT |
+
+### Webhooks — `/api/v1/webhooks`
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/webhook/payment` | Stripe webhook receiver (HMAC verified) |
+| `POST` | `/webhooks/stripe` | Stripe event receiver (checkout.session.completed) |
 
 ---
 
-## 🔄 Booking Lifecycle
+## 🔐 Security Model
 
-```mermaid
-sequenceDiagram
-    actor Guest
-    participant API as Spring Boot API
-    participant DB as PostgreSQL
-    participant Stripe as Stripe API
-    participant Email as Brevo SMTP
+### Authentication
 
-    Guest->>API: POST /bookings/initiate
-    API->>DB: PESSIMISTIC_WRITE lock on Inventory dates
-    DB-->>API: Lock acquired
-    API->>DB: Create Booking (PAYMENTS_PENDING) + increment reservedCount
-    API-->>Guest: bookingId
+- **JWT tokens** issued on login, signed with a secret key using HS256
+- Every protected request passes through `JwtAuthFilter` which:
+  1. Extracts the `Authorization: Bearer <token>` header
+  2. Validates signature and expiry via `JwtService`
+  3. Loads `UserDetails` and sets `SecurityContext`
 
-    Guest->>API: POST /bookings/{id}/guests
-    API->>DB: Save guest details linked to booking
-    API-->>Guest: 200 OK
+### Role Hierarchy
 
-    Guest->>API: POST /bookings/{id}/payments
-    API->>Stripe: Create Checkout Session
-    Stripe-->>API: sessionUrl
-    API-->>Guest: Stripe Checkout URL
-
-    Guest->>Stripe: Completes Payment on Stripe
-
-    Stripe->>API: POST /webhook/payment (checkout.session.completed)
-    API->>API: Verify HMAC signature
-    API->>DB: Update Booking → CONFIRMED + increment bookedCount
-    API->>Email: Send Booking Confirmation Email
-    Email-->>Guest: 📧 Confirmation in inbox
-
-    Note over Guest,DB: ─── CANCELLATION FLOW ───
-
-    Guest->>API: POST /bookings/{id}/cancel
-    API->>DB: Update status → REFUND_PENDING + store refundAmount
-    API->>Stripe: Issue Refund (proximity-based %)
-    Stripe-->>API: Refund confirmed
-    API->>DB: Update status → CANCELLED + release bookedCount
-    API->>Email: Send Cancellation + Refund Notice
-    Email-->>Guest: 📧 Refund confirmation
+```
+ADMIN   →  All permissions
+MANAGER →  Hotel/room/inventory/booking management for owned hotels
+GUEST   →  Search, book, manage own bookings
 ```
 
+### Security Configuration Highlights
+
+```java
+// Public endpoints (no auth required)
+/api/v1/auth/**
+/api/v1/hotels/**          (browse only)
+/api/v1/webhooks/**
+/swagger-ui/**
+/v3/api-docs/**
+
+// JWT required
+/api/v1/bookings/**
+/api/v1/users/**
+
+// MANAGER or ADMIN required
+/api/v1/admin/**
+```
+
+### CORS
+
+Configured to allow requests from `staynest.arclite.site`, `localhost:5173`, and `localhost:3000`.
+
 ---
 
-## 🤖 AI & LLM Features
+## 🤖 AI Integration
 
-All AI features are **opt-in** behind feature flags and fail silently — they never disrupt the core booking flow.
+StayNest uses **Spring AI 1.1.8** with **OpenAI** and **pgvector** to power two AI features:
 
-### 1. AI Dynamic Pricing (`AI_PRICING_ENABLED=true`)
+### 1. Hotel Q&A (`POST /hotels/{id}/ask`)
 
-The outermost decorator in the pricing chain calls OpenRouter (Gemini) with a structured market snapshot:
+Guests can ask natural language questions about a specific hotel (e.g. *"Does this hotel have a spa?"*, *"What's the check-in time?"*).
 
-```json
-{
-  "occupancyRate": 0.85,
-  "daysToCheckIn": 3,
-  "surgeFactor": 1.2,
-  "isWeekend": true,
-  "recentBookingVelocity": 12,
-  "hotelRating": 4.7
+**How it works (RAG pipeline):**
+```
+1. Hotel description, amenities, and reviews are chunked and embedded via OpenAI
+2. Embeddings stored in pgvector's vector_store table
+3. On question: embed the query → similarity search → retrieve top-k chunks
+4. Pass chunks + question to GPT → generate contextual answer
+```
+
+### 2. AI Search Assistant (`POST /hotels/ask` from frontend)
+
+The AI assistant on the search page understands natural language hotel queries and returns structured recommendations.
+
+### pgvector Setup
+
+The `vector_store` table is automatically managed by Spring AI. It stores:
+- `embedding VECTOR(1536)` — OpenAI ada-002 embeddings
+- `content TEXT` — Original text chunk
+- `metadata JSONB` — Source hotel ID and chunk info
+
+---
+
+## 💳 Payments Integration
+
+StayNest uses **Stripe Checkout** for secure payment processing.
+
+### Payment Flow
+
+```
+1. POST /bookings/{id}/payments
+   → Creates Stripe Checkout Session
+   → Inventory held (RESERVED status)
+   → Returns { url: "https://checkout.stripe.com/..." }
+
+2. User completes payment on Stripe-hosted page
+
+3. Stripe POSTs to /webhooks/stripe (checkout.session.completed)
+   → Server verifies Stripe signature
+   → Booking status updated to CONFIRMED
+   → Inventory permanently booked (reservedCount → bookedCount)
+
+4. Frontend polls GET /bookings/{id}/status every 3s (up to 120s)
+   → Displays confirmation when status = CONFIRMED
+```
+
+### Auto-Release Scheduler
+
+Bookings in `RESERVED` status older than 15 minutes are automatically released by a `@Scheduled` job running every 5 minutes:
+
+```java
+@Scheduled(cron = "0 */5 * * * *")
+public void releaseAbandonedReservations() {
+    // Finds stale RESERVED bookings → releases inventory → marks CANCELLED
 }
 ```
 
-The model returns a multiplier clamped to `[0.80, 1.30]`. Any timeout, bad key, or malformed response falls back to `1.0x` transparently.
-
-### 2. Natural Language Search (`NL_SEARCH_ENABLED=true`)
-
-```
-POST /hotels/search/nl
-{ "query": "Find me a 5-star hotel in Bali for next weekend under ₹8000 per night" }
-```
-
-Uses Spring AI's `.entity(HotelSearchRequest.class)` to extract structured fields from the query. Returns extracted params + any missing required fields + actual search results.
-
-### 3. Review-Grounded Q&A — RAG (`REVIEW_QA_ENABLED=true`)
-
-```mermaid
-flowchart LR
-    A["Guest Question\n'Is breakfast included?'"] --> B["HotelQaService"]
-    B --> C["pgvector similarity search\nfiltered by hotelId\ntop-K review chunks"]
-    C --> D["OpenRouter ChatClient\nSystem: 'Answer ONLY from these reviews'"]
-    D --> E["Answer + Source Review IDs"]
-
-    Note["Note: Embeddings generated by OpenAI\ntext-embedding-3-small (1536 dims)\nOpenRouter has no embeddings endpoint"]
-    C -.-> Note
-```
-
-**Embeddings flow:**
-- Reviews indexed on `create` / `update` / `delete` via `ReviewEmbeddingService`
-- Stored in `vector_store` table (pgvector) with `hotelId` + `rating` metadata
-- Query path: similarity search → context stuffing → LLM answer
-
-> ⚠️ The `pgvector` extension is required at startup (regardless of the flag) because Spring AI autoconfigures the vector store. Use `docker compose up` which provides `pgvector/pgvector:pg16`.
+This prevents inventory from being permanently held by abandoned checkouts.
 
 ---
 
-## 🛡 Security Model
+## 🚀 Getting Started
 
-```mermaid
-flowchart TD
-    Req["Incoming HTTP Request"] --> CORS["CorsFilter\nOrigin validation"]
-    CORS --> JWT["JWTAuthFilter\nExtract & validate JWT from cookie"]
-    JWT -->|Invalid / Missing| Err401["401 Unauthorized"]
-    JWT -->|Valid| SC["SecurityContextHolder\nPopulate Authentication"]
-    SC --> Auth["AuthorizationFilter\nRole-based path matching"]
-    Auth -->|Forbidden| Err403["403 Forbidden"]
-    Auth -->|Permitted| Ctrl["Controller Handler"]
+### Prerequisites
 
-    subgraph Public["🌐 Public Endpoints (no auth)"]
-        P1["/auth/**"]
-        P2["/hotels/search"]
-        P3["/hotels/{id}/ask"]
-        P4["/webhook/payment"]
-        P5["/swagger-ui/**"]
-    end
+- **Java 21** (JDK)
+- **Maven 3.9+**
+- **Docker & Docker Compose** (for local Postgres)
+- A **Neon** or local **PostgreSQL 16** database with `pgvector` extension
 
-    subgraph GuestOnly["👤 Guest Role Required"]
-        G1["/bookings/**"]
-        G2["/users/**"]
-        G3["/reviews (write)"]
-    end
+### 1. Clone the Repository
 
-    subgraph ManagerOnly["🏨 HOTEL_MANAGER Role Required"]
-        M1["/admin/hotels/**"]
-    end
+```bash
+git clone https://github.com/ankit5609/Hotel-Booking-Platform.git
+cd Hotel-Booking-Platform
 ```
 
-**Password Security:** BCrypt hashing (`BCryptPasswordEncoder`)
-**Token Security:** HTTP-Only Secure Cookies — not accessible from JavaScript
-**Webhook Security:** Stripe HMAC-SHA256 signature verification on every event
+### 2. Start Local Database
+
+```bash
+docker compose up -d
+# Starts PostgreSQL 16 + pgvector at localhost:5432
+```
+
+### 3. Configure Environment
+
+```bash
+cp .env.example .env
+# Edit .env with your credentials (see Environment Variables section)
+```
+
+### 4. Run the Application
+
+```bash
+./mvnw spring-boot:run
+```
+
+API will be available at **http://localhost:8080/api/v1**
+Swagger UI at **http://localhost:8080/swagger-ui.html**
+
+### Build Only (No Run)
+
+```bash
+./mvnw clean compile          # Compile
+./mvnw clean package          # Package JAR (skip tests)
+./mvnw clean package -DskipTests
+```
 
 ---
 
-## 🚨 Error Handling
+## 🔑 Environment Variables
 
-All errors are returned in a unified JSON envelope:
+Create a `.env` file in the project root (Spring Boot reads this via environment):
+
+```env
+# ─── Database ─────────────────────────────────────────────────
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/hotel_db
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=postgres123
+
+# ─── JWT ───────────────────────────────────────────────────────
+JWT_SECRET=your-256-bit-base64-secret-key
+JWT_EXPIRY_MS=86400000
+
+# ─── Stripe ────────────────────────────────────────────────────
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_SUCCESS_URL=https://staynest.arclite.site/payments/success
+STRIPE_FAILURE_URL=https://staynest.arclite.site/payments/failure
+
+# ─── OpenAI (Spring AI) ────────────────────────────────────────
+SPRING_AI_OPENAI_API_KEY=sk-...
+
+# ─── Cloudinary ────────────────────────────────────────────────
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+
+# ─── Email (Gmail SMTP) ─────────────────────────────────────────
+SPRING_MAIL_USERNAME=your-gmail@gmail.com
+SPRING_MAIL_PASSWORD=your-app-password
+
+# ─── Frontend URL (CORS) ────────────────────────────────────────
+FRONTEND_URL=https://staynest.arclite.site
+```
+
+---
+
+## 🐳 Docker
+
+### Build & Run with Docker
+
+```bash
+# Build the image
+docker build -t staynest-api .
+
+# Run the container
+docker run -p 8080:8080 \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/hotel_db \
+  -e SPRING_DATASOURCE_USERNAME=postgres \
+  -e SPRING_DATASOURCE_PASSWORD=postgres123 \
+  staynest-api
+```
+
+### Dockerfile (Multi-Stage Build)
+
+```dockerfile
+# Stage 1: Build
+FROM maven:3.9.6-eclipse-temurin-21 AS build
+WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+COPY src ./src
+RUN mvn clean package -Dmaven.test.skip=true
+
+# Stage 2: Run
+FROM eclipse-temurin:21-jre-jammy
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+### docker-compose.yml (Local Development)
+
+```yaml
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: hotelbooking-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: hotel_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+```
+
+---
+
+## 🗄 Database
+
+### Schema Overview
+
+| Table | Description |
+|---|---|
+| `hotel` | Hotel listings with `TEXT[]` photos and amenities arrays |
+| `room` | Room types with `TEXT[]` photos and amenities arrays |
+| `inventory` | Per-date availability: `reserved_count` + `booked_count` per room |
+| `hotel_min_price` | Pre-computed min nightly price per hotel for search performance |
+| `booking` | Full booking record with status and Stripe session ID |
+| `booking_guest` | Join table: booking ↔ guest (many-to-many) |
+| `guest` | Travelling companion profiles |
+| `app_user` | User accounts with hashed passwords |
+| `user_roles` | User role assignments |
+| `user_wishlist` | User ↔ hotel wishlist join table |
+| `review` | Hotel reviews with numeric rating |
+| `vector_store` | Spring AI pgvector embeddings for RAG |
+
+### Inventory Logic
+
+For a booking from **July 30 → August 2** (3 nights):
+- Inventory is reserved for dates: **July 30, July 31, August 1**
+- Check-out date (August 2) is **excluded** — the room becomes available again
+- `reservedCount` is incremented on `initBooking()` and decremented to `bookedCount` on confirmation
+
+---
+
+## ⏱ Scheduled Jobs
+
+| Job | Schedule | Description |
+|---|---|---|
+| `releaseAbandonedReservations` | `0 */5 * * * *` (every 5 min) | Finds RESERVED bookings older than 15 minutes → releases inventory → cancels booking |
+
+---
+
+## ⚠️ Error Handling
+
+All exceptions are caught by `GlobalExceptionHandler` and mapped to a consistent response envelope:
 
 ```json
 {
-  "timeStamp": "2025-08-01T10:30:00.000Z",
+  "timeStamp": "2026-07-28T10:00:00",
   "data": null,
   "error": {
-    "status": "NOT_FOUND",
-    "message": "Booking not found with ID: 42",
-    "subErrors": null
+    "message": "Room not available for the selected dates",
+    "status": 409
   }
 }
 ```
 
-| HTTP Code | Spring Status | When |
-|---|---|---|
-| `400` | `BAD_REQUEST` | Validation failures, malformed input |
-| `401` | `UNAUTHORIZED` | Missing or invalid JWT |
-| `403` | `FORBIDDEN` | Insufficient role or resource ownership |
-| `404` | `NOT_FOUND` | Resource not found |
-| `409` | `CONFLICT` | Duplicate resource (e.g. duplicate review) |
-| `500` | `INTERNAL_SERVER_ERROR` | Unexpected server-side failures |
+### Common Status Codes
 
----
-
-## 📦 Project Structure
-
-```
-src/main/java/com/cybernode/projects/HotelBookingApp/
-│
-├── advice/
-│   ├── GlobalExceptionHandler.java      # Maps exceptions to ApiError envelopes
-│   └── GlobalResponseHandler.java       # Wraps all 2xx responses
-│
-├── config/
-│   ├── MapperConfig.java                # ModelMapper bean
-│   ├── StripeConfig.java                # Stripe SDK initialization
-│   ├── CloudinaryConfig.java            # Cloudinary client bean
-│   └── WebSecurityConfig.java           # Security filter chain
-│
-├── controller/
-│   ├── AuthController.java              # /auth/**
-│   ├── HotelController.java             # /hotels/** (public)
-│   ├── AdminHotelController.java        # /admin/hotels/** (managers only)
-│   ├── HotelBookingController.java      # /bookings/**
-│   ├── ReviewController.java            # /reviews/**
-│   ├── UserController.java              # /users/**
-│   └── WebhookController.java           # /webhook/payment
-│
-├── dto/                                 # Request/Response DTOs
-├── entity/                              # JPA Entities
-├── enums/                               # BookingStatus, Gender, Role, SortOption
-├── exception/                           # Custom exceptions
-├── repository/                          # Spring Data JPA interfaces
-│
-├── security/
-│   ├── JWTAuthFilter.java               # JWT extraction & validation filter
-│   └── JWTService.java                  # Token creation & parsing
-│
-├── service/
-│   ├── impl/
-│   │   ├── BookingServiceImpl.java       # Core booking orchestration
-│   │   ├── InventoryServiceImpl.java     # Hotel search & availability
-│   │   ├── PricingUpdateService.java     # Scheduled price recalculation
-│   │   └── ...
-│   └── NotificationService.java         # Email delivery
-│
-└── strategy/
-    ├── BasePricingStrategy.java
-    ├── SurgePricingStrategy.java
-    ├── OccupancyPricingStrategy.java
-    ├── UrgencyPricingStrategy.java
-    ├── HolidayPricingStrategy.java
-    └── AiDynamicPricingStrategy.java     # opt-in outermost decorator
-```
-
----
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-./mvnw test
-
-# Compile only (no tests)
-./mvnw compile
-
-# Full build with tests
-./mvnw clean package
-
-# Test a live endpoint (requires running app)
-curl "http://localhost:8080/api/v1/test-email?to=your@email.com"
-```
-
-| Suite | Location | Type |
-|---|---|---|
-| Context Loads | `HotelBookingAppApplicationTests` | Integration |
-| Signup Validation | `ValidationTest` | Unit |
-
----
-
-## 🏗 Deployment
-
-### Render (Production)
-
-The application is deployed on Render as a Web Service.
-
-**Live Backend:** `https://staynest-backend-drul.onrender.com`
-**Live Frontend:** `https://staynest.arclite.site`
-
-Set all environment variables listed in the [Environment Variables](#-environment-variables) section in your Render dashboard under **Environment → Add from .env**.
-
-> ⚠️ Render free-tier services spin down after 15 minutes of inactivity. Expect a ~30s cold start on first request.
-
-### Stripe Webhook Configuration
-
-Configure your Stripe webhook endpoint to point to:
-```
-https://staynest-backend-drul.onrender.com/api/v1/webhook/payment
-```
-
-Subscribe to these events:
-- `checkout.session.completed`
-- `checkout.session.expired`
-- `payment_intent.payment_failed`
-
----
-
-## 💸 Cancellation Policy
-
-| Days Before Check-in | Refund |
+| Status | Scenario |
 |---|---|
-| `>= 7 days` | **100%** full refund |
-| `3 – 7 days` | **50%** partial refund |
-| `< 3 days` | **0%** no refund |
-| `On/after check-in date` | ❌ Cancellation not allowed |
-
-The refund amount is computed and persisted in `REFUND_PENDING` state **before** calling Stripe. If the Stripe call fails, the booking stays in `REFUND_PENDING` for manual reconciliation — no money is lost silently.
+| `400` | Invalid request body (validation failure) |
+| `401` | Missing or invalid JWT token |
+| `403` | Insufficient role permissions |
+| `404` | Resource not found (hotel, booking, room) |
+| `409` | Conflict — room unavailable, duplicate guest email |
+| `410` | Booking expired (RESERVED → abandoned) |
+| `422` | Business rule violation (e.g., activate hotel with no photos) |
+| `500` | Unhandled server error |
 
 ---
 
-## ⚠️ Known Limitations
+## 🤝 Contributing
 
-- 🔸 The **Holiday Markup** check is currently always `true` (mock implementation — hardcoded list)
-- 🔸 Stripe currency is fixed to **INR** — multi-currency not yet supported
-- 🔸 Reviews created **before** `REVIEW_QA_ENABLED=true` was set are **not retroactively indexed** (no backfill job yet)
-- 🔸 The `pgvector` autoconfiguration loads at startup **regardless of the feature flag**, so the PostgreSQL `vector` extension must be present to boot the app at all
-- 🔸 AI pricing requires a valid `OPENROUTER_API_KEY`; silently falls back to `1.0x` when disabled or erroring
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feat/my-feature`
+3. Commit your changes: `git commit -m "feat: add my feature"`
+4. Push to your branch: `git push origin feat/my-feature`
+5. Open a Pull Request
+
+### Code Style
+
+- Follow standard Java naming conventions
+- Use Lombok annotations to reduce boilerplate
+- All DTOs must have `@Valid` Bean Validation annotations
+- Controllers must not contain business logic — delegate to services
+- Use `@Transactional` on service methods that modify data
 
 ---
 
 <div align="center">
 
-**Built with ❤️ by [Ankit Kumar](https://github.com/ankit5609)**
+Made with ❤️ &nbsp;·&nbsp; Built on **Spring Boot 3.5** + **Java 21** + **PostgreSQL**
 
-[![GitHub](https://img.shields.io/badge/GitHub-ankit5609-181717?style=for-the-badge&logo=github)](https://github.com/ankit5609)
+[⬆ Back to top](#-staynest--backend-api)
 
 </div>
