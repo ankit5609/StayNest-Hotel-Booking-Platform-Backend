@@ -214,6 +214,11 @@ public class HotelServiceImpl implements HotelService{
         } else {
             hotelsPage = hotelRepository.findByActiveTrueAndCityContainingIgnoreCase(city.trim(), clamped);
         }
-        return hotelsPage.map(hotel -> modelMapper.map(hotel, HotelDto.class));
+        return hotelsPage.map(hotel -> {
+            HotelDto dto = modelMapper.map(hotel, HotelDto.class);
+            dto.setPhotos(hotel.getPhotos());
+            dto.setAmenities(hotel.getAmenities());
+            return dto;
+        });
     }
 }

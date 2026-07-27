@@ -115,7 +115,10 @@ public class InventoryServiceImpl implements InventoryService{
         }
 
         return hotelPage.map(hotelPriceDto -> {
-            HotelPriceResponseDto dto = modelMapper.map(hotelPriceDto.getHotel(), HotelPriceResponseDto.class);
+            Hotel hotel = hotelPriceDto.getHotel();
+            HotelPriceResponseDto dto = modelMapper.map(hotel, HotelPriceResponseDto.class);
+            dto.setPhotos(hotel.getPhotos());
+            dto.setAmenities(hotel.getAmenities());
             dto.setPrice(hotelPriceDto.getPrice());
             return dto;
         });
