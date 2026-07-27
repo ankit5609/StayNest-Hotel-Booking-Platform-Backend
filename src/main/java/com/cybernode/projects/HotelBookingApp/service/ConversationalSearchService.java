@@ -105,6 +105,16 @@ public class ConversationalSearchService {
                 parsed.setSortBy(request.getSortBy());
             }
         }
+        if (parsed.getStartDate() != null && parsed.getEndDate() != null) {
+            if (!parsed.getEndDate().isAfter(parsed.getStartDate())) {
+                if (parsed.getEndDate().getMonthValue() < parsed.getStartDate().getMonthValue()) {
+                    parsed.setEndDate(parsed.getEndDate().plusYears(1));
+                } else {
+                    parsed.setEndDate(parsed.getStartDate().plusDays(2));
+                }
+            }
+        }
+
         if (parsed.getPage() == null) {
             parsed.setPage(0);
         }
