@@ -155,7 +155,11 @@ public class HotelServiceImpl implements HotelService{
                 })
                 .collect(Collectors.toList());
 
-        return new HotelInfoDto(modelMapper.map(hotel, HotelDto.class), rooms);
+        HotelDto hotelDto = modelMapper.map(hotel, HotelDto.class);
+        hotelDto.setPhotos(hotel.getPhotos());
+        hotelDto.setAmenities(hotel.getAmenities());
+
+        return new HotelInfoDto(hotelDto, rooms);
     }
 
     private static final int MAX_PAGE_SIZE = 100;
