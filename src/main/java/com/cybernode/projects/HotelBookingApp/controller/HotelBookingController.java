@@ -57,4 +57,12 @@ public class HotelBookingController {
     public ResponseEntity<BookingDto> getBookingDetails(@PathVariable Long bookingId) {
         return ResponseEntity.ok(bookingService.getBookingDetails(bookingId));
     }
+
+    @PostMapping("/{bookingId}/verify-payment")
+    @Operation(summary = "Verify and confirm payment for booking", tags = {"Booking Flow"})
+    public ResponseEntity<BookingDto> verifyPayment(
+            @PathVariable Long bookingId,
+            @RequestParam(required = false) String sessionId) {
+        return ResponseEntity.ok(bookingService.verifyPayment(bookingId, sessionId));
+    }
 }

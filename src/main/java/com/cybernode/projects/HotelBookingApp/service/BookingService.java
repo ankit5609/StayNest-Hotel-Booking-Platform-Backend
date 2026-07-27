@@ -36,5 +36,7 @@ public interface BookingService {
 
     BookingDto getBookingDetails(Long bookingId);
 
+    BookingDto verifyPayment(Long bookingId, String sessionId);
+
     void settleRefund(Long bookingId);
 }

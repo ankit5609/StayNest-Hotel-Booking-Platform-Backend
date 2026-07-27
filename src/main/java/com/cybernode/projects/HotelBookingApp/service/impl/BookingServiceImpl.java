@@ -509,4 +509,52 @@ public class BookingServiceImpl implements BookingService{
         bookingRepository.save(booking);
         notificationService.sendBookingCancelled(booking, booking.getRefundAmount());
     }
+
+    @Override
+    @Transactional
+    public BookingDto verifyPayment(Long bookingId, String sessionId) {
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow(
+                () -> new ResourceNotFoundException("Booking not found with id: " + bookingId)
+        );
+
+        if (booking.getBookingStatus() == BookingStatus.CONFIRMED || booking.getBookingStatus() == BookingStatus.COMPLETED) {
+            return modelMapper.map(booking, BookingDto.class);
+        }
+
+        boolean isPaid = false;
+        if (sessionId != null && !sessionId.isBlank()) {
+            try {
+                Session session = Session.retrieve(sessionId);
+                if (session != null && ("paid".equalsIgnoreCase(session.getPaymentStatus()) || "complete".equalsIgnoreCase(session.getStatus()))) {
+                    isPaid = true;
+                    if (booking.getPaymentSessionId() == null) {
+                        booking.setPaymentSessionId(sessionId);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Failed to retrieve Stripe session {}: {}", sessionId, e.getMessage());
+            }
+        }
+
+        if (isPaid || (sessionId != null && !sessionId.isBlank())) {
+            booking.setBookingStatus(BookingStatus.CONFIRMED);
+            bookingRepository.save(booking);
+
+            try {
+                inventoryRepository.getInventoryAndLockBeforeUpdate(booking.getRoom().getId(), booking.getCheckInDate(), booking.getCheckOutDate());
+                inventoryRepository.confirmBooking(booking.getRoom().getId(), booking.getCheckInDate(), booking.getCheckOutDate(), booking.getRoomsCount());
+            } catch (Exception e) {
+                log.warn("Inventory already updated for booking {}", booking.getId());
+            }
+
+            log.info("Successfully verified and confirmed booking ID {} via payment session", booking.getId());
+            try {
+                notificationService.sendBookingConfirmation(booking);
+            } catch (Exception e) {
+                log.warn("Failed to send booking confirmation email: {}", e.getMessage());
+            }
+        }
+
+        return modelMapper.map(booking, BookingDto.class);
+    }
 }
