@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional
 public class PricingUpdateService {
 
     // Scheduler to update the inventory and HotelMinPrice tables every hour
@@ -45,42 +44,49 @@ public class PricingUpdateService {
     @Value("${pricing.ai.velocity-lookback-days:7}")
     private int velocityLookbackDays;
 
-//    @Scheduled(cron = "*/5 * * * * *")
     @Scheduled(cron = "0 0 * * * *")
     public void updatePrices() {
+        log.info("Starting scheduled hotel pricing update job...");
         int page = 0;
-        int batchSize = 100;
+        int batchSize = 20;
 
-        while(true) {
+        while (true) {
             Page<Hotel> hotelPage = hotelRepository.findAll(PageRequest.of(page, batchSize));
-            if(hotelPage.isEmpty()) {
+            if (hotelPage.isEmpty()) {
                 break;
             }
-            hotelPage.getContent().forEach(this::updateHotelPrices);
-
+            for (Hotel hotel : hotelPage.getContent()) {
+                try {
+                    updateHotelPrices(hotel);
+                } catch (Exception e) {
+                    log.error("Error updating prices for hotel ID {}: {}", hotel.getId(), e.getMessage());
+                }
+            }
             page++;
         }
+        log.info("Completed scheduled hotel pricing update job.");
     }
 
+    @Transactional
     public void updateHotelPrices(Hotel hotel) {
-        log.info("Updating hotel prices for hotel ID: {}", hotel.getId());
+        log.debug("Updating hotel prices for hotel ID: {}", hotel.getId());
         LocalDate startDate = LocalDate.now();
-        LocalDate endDate = LocalDate.now().plusYears(1);
+        LocalDate endDate = LocalDate.now().plusDays(60);
 
         List<Inventory> inventoryList = inventoryRepository.findByHotelAndDateBetween(hotel, startDate, endDate);
+        if (inventoryList.isEmpty()) {
+            return;
+        }
 
-        // Compute booking velocity once for this hotel -- the same answer for every
-        // inventory row, so doing it inside the per-row loop would be an N+1 query.
+        // Compute booking velocity once for this hotel
         long velocity = bookingRepository.countByHotelAndBookingStatusInAndCreatedAtAfter(
                 hotel, List.of(BookingStatus.CONFIRMED, BookingStatus.COMPLETED), LocalDateTime.now().minusDays(velocityLookbackDays));
 
         updateInventoryPrices(inventoryList, velocity);
-
         updateHotelMinPrice(hotel, inventoryList, startDate, endDate);
     }
 
     private void updateHotelMinPrice(Hotel hotel, List<Inventory> inventoryList, LocalDate startDate, LocalDate endDate) {
-        // Compute minimum price per day for the hotel
         Map<LocalDate, BigDecimal> dailyMinPrices = inventoryList.stream()
                 .collect(Collectors.groupingBy(
                         Inventory::getDate,
@@ -89,7 +95,6 @@ public class PricingUpdateService {
                 .entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().orElse(BigDecimal.ZERO)));
 
-        // Prepare HotelPrice entities in bulk
         List<HotelMinPrice> hotelPrices = new ArrayList<>();
         dailyMinPrices.forEach((date, price) -> {
             HotelMinPrice hotelPrice = hotelMinPriceRepository.findByHotelAndDate(hotel, date)
@@ -98,7 +103,6 @@ public class PricingUpdateService {
             hotelPrices.add(hotelPrice);
         });
 
-        // Save all HotelPrice entities in bulk
         hotelMinPriceRepository.saveAll(hotelPrices);
     }
 
